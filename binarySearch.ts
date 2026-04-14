@@ -15,26 +15,26 @@
  * binarySearch([], 5);                         // -1
  */
 const binarySearch = (arr: number[], target: number): number => {
-    let left = 0;
-    let right = arr.length - 1;
+    let leftIndex = 0;
+    let rightIndex = arr.length - 1;
 
     // ── Сужаем диапазон поиска вдвое на каждой итерации ──────────────────────
-    while (left <= right) {
+    while (leftIndex <= rightIndex) {
         // Берём средний индекс диапазона (без риска переполнения)
-        const mid = left + Math.floor((right - left) / 2);
-        const midValue = arr[mid];
+        const midIndex = leftIndex + Math.floor((rightIndex - leftIndex) / 2);
+        const midElement = arr[midIndex];
 
-        if (midValue === target) {
+        if (midElement === target) {
             // 🎯 Нашли!
-            return mid;
+            return midIndex;
         }
 
-        if (midValue < target) {
+        if (midElement < target) {
             // Цель правее — отбрасываем левую половину
-            left = mid + 1;
+            leftIndex = midIndex + 1;
         } else {
             // Цель левее — отбрасываем правую половину
-            right = mid - 1;
+            rightIndex = midIndex - 1;
         }
     }
 
