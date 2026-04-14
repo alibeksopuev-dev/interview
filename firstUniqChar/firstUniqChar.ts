@@ -7,7 +7,7 @@
  *
  * @example
  * firstUniqueCharIndex('leetcode'); // 0  → 'l'
- * firstUniqueCharIndex('loveleet'); // 2  → 'v'
+ * firstUniqueCharIndex('loveleet'); // 1  → 'o'
  * firstUniqueCharIndex('aabb');     // -1 → уникальных нет
  */
 const firstUniqueCharIndex = (str: string): number => {
@@ -38,7 +38,7 @@ const firstUniqueCharIndex = (str: string): number => {
 
 // ── Тесты ──────────────────────────────────────────────────────────────────
 console.log(firstUniqueCharIndex('leetcode')); // 0  → 'l'
-console.log(firstUniqueCharIndex('loveleet')); // 2  → 'v'
+console.log(firstUniqueCharIndex('loveleet')); // 1  → 'o'
 console.log(firstUniqueCharIndex('aabb'));     // -1 → нет уникального
 
 export { firstUniqueCharIndex };
