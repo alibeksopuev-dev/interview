@@ -6,7 +6,7 @@
 export function compressRanges(arr: number[]): string {
     // 1. Копируем исходный массив и сортируем его по возрастанию
     const sortedArr = [...arr].sort((a, b) => a - b);
-    
+
     // Базовый случай: пустой массив
     if (!sortedArr.length) {
         return '';
@@ -15,7 +15,7 @@ export function compressRanges(arr: number[]): string {
     // `result` служит "стеком" для хранения блоков итоговой строки
     // Кладем в него сразу самый ранний (наименьший) элемент
     const result: string[] = [String(sortedArr[0])];
-    
+
     // Флаг, который показывает, идем ли мы сейчас по непрерывной последовательности (шаг +1)
     let isInterval = false;
 

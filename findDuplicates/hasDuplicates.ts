@@ -7,11 +7,11 @@
  * @returns {boolean} - true, если найден дубликат
  *
  * @example
- * findDuplicates([1, 2, 3, 1]); // true
- * findDuplicates([1, 2, 3, 4]); // false
- * findDuplicates([1, 1, 1, 3, 3, 4, 3, 2, 4, 2]); // true
+ * hasDuplicates([1, 2, 3, 1]); // true
+ * hasDuplicates([1, 2, 3, 4]); // false
+ * hasDuplicates([1, 1, 1, 3, 3, 4, 3, 2, 4, 2]); // true
  */
-const findDuplicates = (numbers: number[]): boolean => {
+const hasDuplicates = (numbers: number[]): boolean => {
   // Создаем Set для хранения уже встреченных уникальных элементов
   const seen: Set<number> = new Set();
 
@@ -25,7 +25,7 @@ const findDuplicates = (numbers: number[]): boolean => {
     if (seen.has(numbers[i])) {
       return true; // Найден дубликат, возвращаем true
     }
-    
+
     seen.add(numbers[i]); // Добавляем элемент для будущих проверок
   }
 
@@ -34,8 +34,8 @@ const findDuplicates = (numbers: number[]): boolean => {
 };
 
 // ── Тесты ──────────────────────────────────────────────────────────────────
-console.log(findDuplicates([1, 2, 3, 1])); // true
-console.log(findDuplicates([1, 2, 3, 4])); // false
-console.log(findDuplicates([1, 1, 1, 3, 3, 4, 3, 2, 4, 2])); // true
+console.log(hasDuplicates([1, 2, 3, 1])); // true
+console.log(hasDuplicates([1, 2, 3, 4])); // false
+console.log(hasDuplicates([1, 1, 1, 3, 3, 4, 3, 2, 4, 2])); // true
 
-export { findDuplicates };
+export { hasDuplicates };
