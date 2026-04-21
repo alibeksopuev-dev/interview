@@ -2,6 +2,7 @@
  * Преобразует массив чисел в строку, сворачивая последовательные числа в диапазоны
  * @param {number[]} arr - исходный массив чисел
  * @returns {string} - строка с диапазонами (например, "1-2,4,7-9")
+ * Пример исходного массива: [7, 1, 4, 2, 9, 8]
  */
 export function compressRanges(arr: number[]): string {
     // 1. Копируем исходный массив и сортируем его по возрастанию
@@ -49,4 +50,36 @@ export function compressRanges(arr: number[]): string {
 
     // Склеиваем блоки через запятую
     return result.join(',');
+}
+
+export function otherCompressRanges(arr: number[]): string {
+    if (arr.length === 0) return "" // 1. Краевой случай: пустой массив
+
+    // 2. Сортируем копию массива O(n log n). Копия нужна, чтобы не мутировать оригинал.
+    const sorted = [...arr].sort((a, b) => a - b)
+    const result: string[] = []
+
+    // 3. Указатель на начало текущего потенциального диапазона
+    let start = sorted[0]
+
+    // Итерируемся до length включительно. На последнем шаге current будет undefined,
+    // что спровоцирует условие "разрыва" и позволит закрыть последний диапазон.
+    for (let i = 1; i <= sorted.length; i++) {
+        const prev = sorted[i - 1];
+        const current = sorted[i];
+
+        // 4. Проверяем разрыв: если текущее число не равно предыдущему + 1
+        if (current !== prev + 1) {
+            const end = prev // Предыдущее число было концом диапазона
+
+            // 5. Формируем строку: либо одиночное число, либо интервал "start-end"
+            result.push(start === end ? `${start}` : `${start}-${end}`)
+
+            // 6. Передвигаем "start" на новое число, начиная новый отсчет
+            start = sorted[i]
+        }
+    }
+
+    // 7. Склеиваем все накопленные блоки через запятую
+    return result.join(',')
 }
