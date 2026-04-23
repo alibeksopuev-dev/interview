@@ -8,9 +8,7 @@ const binarySearch = (arr: number[], target: number) => {
 
         if (target === midElement) {
             return midIndex
-        }
-
-        if (target < midElement) {
+        } else if (target < midElement) {
             rightIndex = midIndex - 1
         } else {
             leftIndex = midIndex + 1
@@ -108,6 +106,16 @@ export function mergeIntervals(intervals: number[][]): number[][] {
             result.push(interval)
         }
     }
+
+    return result
+}
+
+export function insertIntervalBinary(
+    intervals: number[][],
+    newInterval: number[],
+): number[][] {
+    const result: number[][] = []
+
 
     return result
 }

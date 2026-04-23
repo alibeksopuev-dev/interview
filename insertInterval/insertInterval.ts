@@ -63,36 +63,40 @@ export function insertIntervalBinary(
         return [newInterval];
     }
 
-    let n = intervals.length;
-    let target = newInterval[0]; // начало нового интервала — ключ для поиска
-    let left = 0,
-        right = n - 1;
+    const n = intervals.length;
+    const target = newInterval[0]; // начало нового интервала — ключ для поиска
+    let leftIndex = 0;
+    let rightIndex = n - 1;
 
     // ── Бинарный поиск позиции вставки ──
-    // Ищем первый индекс, где intervals[mid][0] >= target
-    // После цикла: left = индекс первого элемента с началом >= target
-    while (left <= right) {
-        let mid = Math.floor((left + right) / 2);
-        if (intervals[mid][0] < target) {
-            left = mid + 1;
+    // Ищем первый индекс, где midElement[0] >= target
+    // После цикла: leftIndex = индекс первого элемента с началом >= target
+    while (leftIndex <= rightIndex) {
+        const midIndex = Math.floor((leftIndex + rightIndex) / 2);
+        const midElement = intervals[midIndex];
+        
+        if (midElement[0] < target) {
+            leftIndex = midIndex + 1;
         } else {
-            right = mid - 1;
+            rightIndex = midIndex - 1;
         }
     }
 
     // Вставляем newInterval на найденную позицию (O(n) из-за сдвига элементов)
-    intervals.splice(left, 0, newInterval);
+    intervals.splice(leftIndex, 0, newInterval);
 
     // ── Стандартное слияние (как в mergeIntervals) ──
     // Теперь массив отсортирован по началу, но может содержать пересечения
     let res: number[][] = [];
     for (let interval of intervals) {
-        // Если результат пуст или нет пересечения → добавляем новый "островок"
-        if (res.length === 0 || res[res.length - 1][1] < interval[0]) {
-            res.push(interval);
+        const recent = res[res.length - 1];
+        // Проверяем, если массив не пуст и текущий интервал пересекается с последним
+        if (recent && recent[1] > interval[0]) {
+            // Если есть пересечение → расширяем конец последнего интервала
+            recent[1] = Math.max(recent[1], interval[1]);
         } else {
-            // Есть пересечение → расширяем конец последнего интервала
-            res[res.length - 1][1] = Math.max(res[res.length - 1][1], interval[1]);
+            // Если нет пересечения → добавляем новый интервал
+            res.push(interval);
         }
     }
 
