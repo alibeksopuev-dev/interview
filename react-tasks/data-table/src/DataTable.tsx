@@ -6,9 +6,9 @@ const columns = [
   { label: 'Name', key: 'name' },
   { label: 'Age', key: 'age' },
   { label: 'Occupation', key: 'occupation' },
-]
+] as const
 
-type SortField = 'id' | 'name' | 'age' | 'occupation'
+type SortField = (typeof columns)[number]['key']
 type SortDirection = 'asc' | 'desc'
 type User = (typeof users)[number]
 
@@ -65,8 +65,13 @@ export default function DataTable() {
               <th key={key}>
                 <button
                   onClick={() => {
-                    setSortField(key as SortField)
-                    setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc')
+                    if (sortField !== key) {
+                      setSortField(key)
+                      setSortDirection('asc')
+                    } else {
+                      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+                    }
+                    setCurrentPage(1)
                   }}
                 >
                   {label}
