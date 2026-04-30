@@ -1,58 +1,57 @@
 const binarySearch = (arr: number[], target: number) => {
-    let leftIndex = 0
-    let rightIndex = arr.length - 1
+  let leftIndex = 0
+  let rightIndex = arr.length - 1
 
-    while (leftIndex < rightIndex) {
-        const midIndex = leftIndex + Math.floor((rightIndex - leftIndex) / 2)
-        const midElement = arr[midIndex]
+  while (leftIndex < rightIndex) {
+    const midIndex = leftIndex + Math.floor((rightIndex - leftIndex) / 2)
+    const midElement = arr[midIndex]
 
-        if (target === midElement) {
-            return midIndex
-        } else if (target < midElement) {
-            rightIndex = midIndex - 1
-        } else {
-            leftIndex = midIndex + 1
-        }
+    if (target === midElement) {
+      return midIndex
+    } else if (target < midElement) {
+      rightIndex = midIndex - 1
+    } else {
+      leftIndex = midIndex + 1
     }
+  }
 
-    return -1
+  return -1
 }
 
 /**
-* Преобразует массив чисел в строку, сворачивая последовательные числа в диапазоны
-* @param {number[]} arr - исходный массив чисел
-* @returns {string} - строка с диапазонами (например, "1-2,4,7-9")
-* Пример исходного массива: [7, 1, 4, 2, 9, 8]
-*/
+ * Преобразует массив чисел в строку, сворачивая последовательные числа в диапазоны
+ * @param {number[]} arr - исходный массив чисел
+ * @returns {string} - строка с диапазонами (например, "1-2,4,7-9")
+ * Пример исходного массива: [7, 1, 4, 2, 9, 8]
+ */
 export function compressRanges(arr: number[]): string {
-    arr.sort((a, b) => a - b)
+  arr.sort((a, b) => a - b)
 
-    if (arr.length === 0) return ''
+  if (arr.length === 0) return ''
 
-    let isInterval = false
-    const result = [String(arr[0])]
+  let isInterval = false
+  const result = [String(arr[0])]
 
-    for (let i = 1; i <= arr.length; i++) {
-        let prevNumber = arr[i - 1]
-        let currentNumber = arr[i]
+  for (let i = 1; i <= arr.length; i++) {
+    let prevNumber = arr[i - 1]
+    let currentNumber = arr[i]
 
-        if (currentNumber !== undefined && currentNumber - prevNumber === 1) {
-            isInterval = true
-            continue
-        }
-
-        if (isInterval) {
-            result[result.length - 1] += `-${prevNumber}`
-            isInterval = false
-        }
-
-        if (currentNumber !== undefined) {
-            result.push(String(currentNumber))
-        }
+    if (currentNumber !== undefined && currentNumber - prevNumber === 1) {
+      isInterval = true
+      continue
     }
 
+    if (isInterval) {
+      result[result.length - 1] += `-${prevNumber}`
+      isInterval = false
+    }
 
-    return result.join(',')
+    if (currentNumber !== undefined) {
+      result.push(String(currentNumber))
+    }
+  }
+
+  return result.join(',')
 }
 
 /**
@@ -68,20 +67,20 @@ export function compressRanges(arr: number[]): string {
  * findFirstUniqueCharIndex('aabb');     // -1 → уникальных нет
  */
 const findFirstUniqueCharIndex = (str: string): number => {
-    const charFrequencyMap: Map<string, number> = new Map<string, number>()
+  const charFrequencyMap: Map<string, number> = new Map<string, number>()
 
-    for(const char of str){
-        const currentCount = charFrequencyMap.get(char) ?? 0
-        charFrequencyMap.set(char, currentCount + 1)
+  for (const char of str) {
+    const currentCount = charFrequencyMap.get(char) ?? 0
+    charFrequencyMap.set(char, currentCount + 1)
+  }
+
+  for (let i = 0; i < str.length; i++) {
+    if (charFrequencyMap.get(str[i]) === 1) {
+      return i
     }
+  }
 
-    for (let i = 0; i < str.length; i++) {
-        if(charFrequencyMap.get(str[i]) === 1) {
-            return i
-        }
-    }
-
-    return -1
+  return -1
 }
 
 /**
@@ -90,32 +89,56 @@ const findFirstUniqueCharIndex = (str: string): number => {
  * @returns {number[][]} - массив объединенных интервалов (результат: [[1,6]])
  */
 export function mergeIntervals(intervals: number[][]): number[][] {
-    intervals.sort((a, b) => a[0] - b[0])
+  intervals.sort((a, b) => a[0] - b[0])
 
-    if (intervals.length < 2) {
-        return intervals;
+  if (intervals.length < 2) {
+    return intervals
+  }
+
+  const result = [intervals[0]]
+  for (const interval of intervals) {
+    const recent = result[result.length - 1]
+
+    if (recent[1] >= interval[0]) {
+      recent[1] = Math.max(recent[1], interval[1])
+    } else {
+      result.push(interval)
     }
+  }
 
-    const result = [intervals[0]]
-    for (const interval of intervals) {
-        const recent = result[result.length - 1]
-
-        if (recent[1] >= interval[0]) {
-            recent[1] = Math.max(recent[1], interval[1])
-        } else {
-            result.push(interval)
-        }
-    }
-
-    return result
+  return result
 }
 
-export function insertIntervalBinary(
-    intervals: number[][],
-    newInterval: number[],
-): number[][] {
-    const result: number[][] = []
+export function insertIntervalBinary(intervals: number[][], newInterval: number[]): number[][] {
+  const result: number[][] = []
 
-
-    return result
+  return result
 }
+
+function curry(func: Function): Function {
+  return function curried(this: any, ...args: any[]): any {
+    if (args.length >= func.length) {
+      return func.apply(this, args)
+    }
+
+    return (arg: any) => (arg === undefined ? curried.apply(this, args) : curried.apply(this, [...args, arg]))
+
+    // bind - более гибкий вариант. Позволяет передавать аргументы любыми пачками: curried(1, 2)(3) или curried(1)(2, 3).
+    // return curried.bind(this, ...args)
+  }
+}
+
+const sum = (a: number, b: number, c: number) => a + b + c
+const curriedSum = curry(sum)
+console.log(curriedSum(1)(2)(3)) // 6
+
+const person = {
+  name: 'Alibek',
+  greet(phrase: string, punctuation: string) {
+    return `${phrase}, ${this.name}${punctuation}`
+  },
+}
+const curriedGreet = curry(person.greet)
+// Важно вызвать с правильным контекстом
+const helloAlibek = curriedGreet.call(person, 'Hello')
+console.log(helloAlibek('!')) // "Hello, Alibek!"

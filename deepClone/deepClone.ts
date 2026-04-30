@@ -75,8 +75,9 @@ function isPrimitiveTypeOrFunction(value: unknown): boolean {
 function getExactType(value: unknown): string {
     const type = typeof value;
     if (type !== 'object') return type;
-    // Вытаскиваем точный тег (например, 'date', 'map', 'set') из строки '[object Date]'
-    return Object.prototype.toString.call(value).replace(/^\[object (\S+)\]$/, '$1').toLowerCase();
+    // Вытаскиваем точный тег (например, 'Array', 'Date') через .slice(8, -1)
+    // "[object Date]" -> "Date"
+    return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,7 +107,10 @@ export function deepCloneAdvanced<T>(value: T, cache = new Map<any, any>()): T {
     if (type === 'regexp') return new RegExp(value as unknown as RegExp) as T;
 
     // 2. ЗАЩИТА ОТ БЕСКОНЕЧНЫХ ЦИКЛОВ (Circular References)
-    // Если мы уже встречали этот объект, возвращаем его клон из кэша
+    // Представьте, что вы копируете книгу, где на 10-й странице написано "см. страницу 10".
+    // Без кэша вы будете бесконечно перелистывать на 10-ю страницу.
+    // Кэш — это блокнот, где вы записываете: "Оригинал А уже копируется в Лист №1".
+    // Если мы снова видим Оригинал А, мы просто даём ссылку на Лист №1.
     if (cache.has(value)) {
         return cache.get(value);
     }
@@ -130,6 +134,43 @@ export function deepCloneAdvanced<T>(value: T, cache = new Map<any, any>()): T {
 
     return cloned;
 }
+
+/**
+ * ТРАССИРОВКА РАБОТЫ КЭША (Пошагово):
+ *
+ * const a = { name: 'A' };
+ * const b = { name: 'B' };
+ * a.link = b;
+ * b.link = a; // Цикл!
+ *
+ * 1. Вызов deepClone(a):
+ *    - Кэш пуст.
+ *    - Создаём клон_А.
+ *    - Записываем в кэш: [Объект 'a' -> клон_А].
+ *    - Идём по свойствам 'a'. Видим 'link' (это объект 'b').
+ *    - Вызываем deepClone(b).
+ *
+ * 2. Вызов deepClone(b):
+ *    - 'b' нет в кэше.
+ *    - Создаём клон_Б.
+ *    - Записываем в кэш: [Объект 'b' -> клон_Б].
+ *    - Идём по свойствам 'b'. Видим 'link' (это объект 'a').
+ *    - Вызываем deepClone(a).
+ *
+ * 3. Повторный вызов deepClone(a):
+ *    - ПРОВЕРКА: 'a' есть в кэше? ДА!
+ *    - Возвращаем из кэша уже созданный клон_А.
+ *
+ * 4. Завершение deepClone(b):
+ *    - Получили клон_А для свойства 'link'.
+ *    - Возвращаем готовый клон_Б.
+ *
+ * 5. Завершение deepClone(a):
+ *    - Получили клон_Б для свойства 'link'.
+ *    - Возвращаем готовый клон_А.
+ *
+ * ИТОГ: Рекурсия остановилась, объекты ссылаются друг на друга правильно.
+ */
 
 
 // ── Тесты ──────────────────────────────────────────────────────────────────
