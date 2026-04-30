@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import users from './data/users'
 
-// TODO: Шаг 1 — добавить состояние currentPage и pageSize
-// TODO: Шаг 2 — реализовать функцию paginateUsers
-// TODO: Шаг 3 — добавить элементы управления пагинацией (Prev / Next)
-// TODO: Шаг 4 — добавить select для выбора кол-ва строк на странице (5, 10, 20)
-// TODO: Шаг 5 — отключить кнопки Prev/Next когда нельзя перейти
+const columns = [
+  { label: 'ID', key: 'id' },
+  { label: 'Name', key: 'name' },
+  { label: 'Age', key: 'age' },
+  { label: 'Occupation', key: 'occupation' },
+]
 
+type SortField = 'id' | 'name' | 'age' | 'occupation'
+type SortDirection = 'asc' | 'desc'
 type User = (typeof users)[number]
 
 const paginateUsers = (usersList: Array<User>, currentPage: number, pageSize: number) => {
@@ -21,10 +24,36 @@ const paginateUsers = (usersList: Array<User>, currentPage: number, pageSize: nu
   }
 }
 
+const sortUsers = (usersList: Array<User>, sortField: SortField | null, sortDirection: SortDirection) => {
+  const clonedUsers = usersList.slice()
+
+  switch (sortField) {
+    case 'id':
+    case 'age': {
+      return clonedUsers.sort((a, b) =>
+        sortDirection === 'asc' ? a[sortField] - b[sortField] : b[sortField] - a[sortField],
+      )
+    }
+    case 'name':
+    case 'occupation': {
+      return clonedUsers.sort((a, b) =>
+        sortDirection === 'asc' ? a[sortField].localeCompare(b[sortField]) : b[sortField].localeCompare(a[sortField]),
+      )
+    }
+    default: {
+      return clonedUsers
+    }
+  }
+}
+
 export default function DataTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(5)
-  const { pageUsers, totalPages } = paginateUsers(users, currentPage, pageSize)
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+
+  const sortedUsers = sortUsers(users, sortField, sortDirection)
+  const { pageUsers, totalPages } = paginateUsers(sortedUsers, currentPage, pageSize)
 
   return (
     <div>
@@ -32,13 +61,17 @@ export default function DataTable() {
       <table>
         <thead>
           <tr>
-            {[
-              { label: 'ID', key: 'id' },
-              { label: 'Name', key: 'name' },
-              { label: 'Age', key: 'age' },
-              { label: 'Occupation', key: 'occupation' },
-            ].map(({ label, key }) => (
-              <th key={key}>{label}</th>
+            {columns.map(({ label, key }) => (
+              <th key={key}>
+                <button
+                  onClick={() => {
+                    setSortField(key as SortField)
+                    setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc')
+                  }}
+                >
+                  {label}
+                </button>
+              </th>
             ))}
           </tr>
         </thead>
