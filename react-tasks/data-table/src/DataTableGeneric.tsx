@@ -7,6 +7,7 @@ type ColumnDef<T> = Readonly<{
   key: string
   renderCell: (row: T) => React.ReactNode
   comparator: (a: T, b: T, sortDirection: SortDirection) => number
+  filterType: 'string' | 'range' | null
 }>
 
 export type Columns<T> = ReadonlyArray<ColumnDef<T>>
