@@ -1,4 +1,4 @@
-``"use strict";
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mergeIntervals = void 0;
 /**
@@ -30,8 +30,8 @@ function mergeIntervals(intervals) {
             recent[1] = Math.max(recent[1], interval[1]);
         }
         else {
-            // Пересечения нет. "Разрыв" между отрезками.
-            // Это значит, что предыдущий интервал полностью закрыт,
+            // Пересечения нет. "Разрыв" между отрезками. 
+            // Это значит, что предыдущий интервал полностью закрыт, 
             // а текущий отрезок мы добавляем как новый элемент в результат.
             result.push(interval);
         }

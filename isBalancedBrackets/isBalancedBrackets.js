@@ -76,3 +76,33 @@ function isClosingBracket(bracket) {
 
 Стек пуст → `stack.length === 0` → возвращаем ✅ `true`
 */
+/**
+ * Оптимизированная версия решения (Best Practice).
+ *
+ * Почему это решение эффективнее:
+ * 1. В стек кладутся ОЖИДАЕМЫЕ закрывающие скобки. Это упрощает проверку при извлечении.
+ * 2. Нет создания объектов/сетов внутри цикла (в отличие от версии с isClosingBracket).
+ * 3. Игнорирует посторонние символы, работая только со скобками.
+ * 4. Time Complexity: O(n), Space Complexity: O(n).
+ */
+function isBalancedBracketsOptimized(bracketString) {
+    const stack = [];
+    const map = {
+        '(': ')',
+        '[': ']',
+        '{': '}'
+    };
+    for (const char of bracketString) {
+        if (map[char]) {
+            // Если это открывающая скобка — кладем в стек ту, которую ЖДЕМ на закрытие
+            stack.push(map[char]);
+        }
+        else if (char === ')' || char === ']' || char === '}') {
+            // Если это закрывающая скобка — она должна быть на вершине стека
+            if (stack.pop() !== char) {
+                return false;
+            }
+        }
+    }
+    return stack.length === 0;
+}
