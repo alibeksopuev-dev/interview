@@ -91,7 +91,7 @@ export function insertIntervalBinary(
     for (let interval of intervals) {
         const recent = res[res.length - 1];
         // Проверяем, если массив не пуст и текущий интервал пересекается с последним
-        if (recent && recent[1] > interval[0]) {
+        if (recent && recent[1] >= interval[0]) {
             // Если есть пересечение → расширяем конец последнего интервала
             recent[1] = Math.max(recent[1], interval[1]);
         } else {

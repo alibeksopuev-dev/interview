@@ -24,7 +24,36 @@ const binarySearch = (arr: number[], target: number) => {
  * @returns {string} - строка с диапазонами (например, "1-2,4,7-9")
  * Пример исходного массива: [7, 1, 4, 2, 9, 8]
  */
-export function compressRanges(arr: number[]): string {}
+export function compressRanges(arr: number[]): string {
+  if (arr.length === 0) return ''
+
+  arr.sort((a, b) => a - b)
+
+  let result = [String(arr[0])]
+
+  let isInterval = false
+
+  for (let i = 1; i <= arr.length; i++) {
+    const prevNumber = arr[i - 1]
+    const currentNumber = arr[i]
+
+    if (currentNumber - prevNumber === 1) {
+      isInterval = true
+      continue
+    }
+
+    if (isInterval) {
+      result[result.length - 1] += `-${prevNumber}`
+      isInterval = false
+    }
+
+    if (currentNumber !== undefined) {
+      result.push(String(currentNumber))
+    }
+  }
+
+  return result.join(',')
+}
 
 /**
  * Находит индекс первого уникального (неповторяющегося) символа в строке.
@@ -38,7 +67,22 @@ export function compressRanges(arr: number[]): string {}
  * findFirstUniqueCharIndex('loveleet'); // 1  → 'o'
  * findFirstUniqueCharIndex('aabb');     // -1 → уникальных нет
  */
-const findFirstUniqueCharIndex = (str: string): number => {}
+const findFirstUniqueCharIndex = (str: string): number => {
+  const charMap = new Map<string, number>()
+
+  for (const char of str) {
+    const currentCount = charMap.get(char) ?? 0
+    charMap.set(char, currentCount + 1)
+  }
+
+  for (let i = 0; i < str.length; i++) {
+    if (charMap.get(str[i]) === 1) {
+      return i
+    }
+  }
+
+  return -1
+}
 
 /**
  * Объединяет пересекающиеся интервалы
@@ -65,7 +109,31 @@ export function mergeIntervals(intervals: number[][]): number[][] {
 }
 
 export function insertIntervalBinary(intervals: number[][], newInterval: number[]): number[][] {
-  const result: number[][] = []
+  let leftIndex = 0
+  let rightIndex = intervals.length - 1
+  const target = newInterval[0]
+
+  while (leftIndex <= rightIndex) {
+    let midIndex = leftIndex + Math.floor((rightIndex - leftIndex) / 2)
+    let midElement = intervals[midIndex]
+    if (target > midElement[0]) {
+      leftIndex = midIndex + 1
+    } else if (target < midElement[0]) {
+      rightIndex = midIndex - 1
+    }
+  }
+
+  intervals.splice(leftIndex, 0, newInterval)
+  const result: number[][] = [intervals[0]]
+  for (const interval of intervals) {
+    let recent = result[result.length - 1]
+
+    if (recent[1] >= interval[0]) {
+      recent[1] = Math.max(recent[1], interval[1])
+    } else {
+      result.push(interval)
+    }
+  }
 
   return result
 }

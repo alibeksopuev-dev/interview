@@ -148,3 +148,56 @@ type UpdateUserForm = Partial<Omit<User, 'id'>>;
 //   avatarUrl?: string;
 // }
 ```
+
+---
+
+## 5. `ReturnType<Type>` (Тип возврата)
+
+**Что делает:** Извлекает тип, который возвращает функция.
+**Когда использовать:** Когда вы не знаете точно, что вернет функция (например, встроенная или из библиотеки), но хотите использовать этот тип в своем коде.
+
+**Пример:**
+```typescript
+function getUser() {
+  return { id: 1, name: 'Alibek' };
+}
+
+// Извлекаем тип объекта, который возвращает функция
+type UserFromFunc = ReturnType<typeof getUser>;
+
+// Результат: { id: number, name: string }
+```
+
+---
+
+## 6. `Parameters<Type>` (Тип параметров)
+
+**Что делает:** Извлекает типы всех аргументов функции и упаковывает их в кортеж (Tuple/Массив).
+**Когда использовать:** Когда вам нужно создать обертку для функции и вы хотите, чтобы она принимала ровно те же аргументы, что и оригинал.
+
+**Пример:**
+```typescript
+function sendMessage(text: string, userId: number) {}
+
+// Извлекаем типы аргументов
+type SendMessageArgs = Parameters<typeof sendMessage>;
+
+// Результат: [text: string, userId: number]
+```
+
+---
+
+## 💡 Real-world Case: `ReturnType<typeof setTimeout>`
+
+Это классический пример использования утилит для написания **изоморфного** кода (работающего и в браузере, и в Node.js).
+
+```typescript
+let timeoutID: ReturnType<typeof setTimeout> | null = null;
+```
+
+**Почему это важно:**
+1.  **В браузере** `setTimeout` возвращает `number`.
+2.  **В Node.js** `setTimeout` возвращает объект `NodeJS.Timeout`.
+
+Если вы напишете `let id: number`, ваш код сломается при тестировании или запуске в среде Node.js. Использование `ReturnType<typeof setTimeout>` автоматически подставит правильный тип в зависимости от того, где запущен TypeScript.
+
