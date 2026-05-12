@@ -6,21 +6,23 @@
 
 **Debounce** — техника управления частотой вызовов функции.
 
-Если debounced-функцию вызывают несколько раз подряд, реальный вызов `func` произойдёт только один раз — через `wait` мс **после последнего** вызова.
+Если debounced-функцию вызывают несколько раз подряд, реальный вызов `func` произойдёт только один раз — через `wait` мс
+**после последнего** вызова.
 
-**Аналогия из жизни:** кнопка «Держать дверь открытой» в лифте. Пока кто-то её нажимает — дверь не закрывается. Только после того, как перестали нажимать и прошло X секунд — дверь закрывается (func вызывается).
+**Аналогия из жизни:** кнопка «Держать дверь открытой» в лифте. Пока кто-то её нажимает — дверь не закрывается. Только
+после того, как перестали нажимать и прошло X секунд — дверь закрывается (func вызывается).
 
 ---
 
 ## Ключевые концепции
 
-| Концепция | Роль в debounce |
-|-----------|----------------|
+| Концепция               | Роль в debounce                                                              |
+| ----------------------- | ---------------------------------------------------------------------------- |
 | **Замыкание (closure)** | `timeoutID` живёт между вызовами — каждый новый вызов видит один и тот же ID |
-| **`setTimeout`** | Планирует отложенный вызов `func` |
-| **`clearTimeout`** | Отменяет предыдущий таймер — сбрасывает отсчёт |
-| **`this`** | Должен быть таким же, как у вызывателя — передаётся через `apply` |
-| **`...args`** | Берутся из **последнего** вызова (не первого) |
+| **`setTimeout`**        | Планирует отложенный вызов `func`                                            |
+| **`clearTimeout`**      | Отменяет предыдущий таймер — сбрасывает отсчёт                               |
+| **`this`**              | Должен быть таким же, как у вызывателя — передаётся через `apply`            |
+| **`...args`**           | Берутся из **последнего** вызова (не первого)                                |
 
 ---
 
@@ -28,15 +30,13 @@
 
 ### Проблема с `Function`
 
-Наивная сигнатура `debounce(func: Function): Function` теряет информацию о типах аргументов. TypeScript не сможет проверить, правильно ли вы вызываете debounced-функцию.
+Наивная сигнатура `debounce(func: Function): Function` теряет информацию о типах аргументов. TypeScript не сможет
+проверить, правильно ли вы вызываете debounced-функцию.
 
 ### Строгая версия через Generic
 
 ```ts
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void
 ```
 
 Разбор каждого элемента:
@@ -69,15 +69,15 @@ number   // не функция — TS ошибка
 ```ts
 type F = (query: string, limit: number) => Promise<User[]>
 
-Parameters<F>  // → [query: string, limit: number]
+Parameters<F> // → [query: string, limit: number]
 
 // Под капотом:
-type Parameters<T extends (...args: any) => any> =
-  T extends (...args: infer P) => any ? P : never
+type Parameters<T extends (...args: any) => any> = T extends (...args: infer P) => any ? P : never
 // infer P — TS "вытаскивает" тип аргументов из сигнатуры T в переменную P
 ```
 
-Возвращаем `(...args: Parameters<T>) => void` — дебаунсированная функция принимает **те же аргументы**, что и оригинал. TS теперь проверяет типы на вызове.
+Возвращаем `(...args: Parameters<T>) => void` — дебаунсированная функция принимает **те же аргументы**, что и оригинал.
+TS теперь проверяет типы на вызове.
 
 ---
 
@@ -90,10 +90,10 @@ type Parameters<T extends (...args: any) => any> =
 // Node.js:  setTimeout возвращает NodeJS.Timeout (объект)
 
 // Поэтому НЕ пишем:
-let timeoutID: number | null = null       // ❌ сломается в Node.js
+let timeoutID: number | null = null // ❌ сломается в Node.js
 
 // А пишем:
-let timeoutID: ReturnType<typeof setTimeout> | null = null  // ✅ везде работает
+let timeoutID: ReturnType<typeof setTimeout> | null = null // ✅ везде работает
 
 // typeof setTimeout — берёт тип самой функции setTimeout
 // ReturnType<...>   — извлекает тип её возвращаемого значения
@@ -103,7 +103,8 @@ let timeoutID: ReturnType<typeof setTimeout> | null = null  // ✅ везде р
 
 #### `this: any` — фиктивный параметр
 
-TypeScript позволяет объявить `this` первым параметром функции — это **не реальный параметр** (в JS его нет), только аннотация для компилятора.
+TypeScript позволяет объявить `this` первым параметром функции — это **не реальный параметр** (в JS его нет), только
+аннотация для компилятора.
 
 ```ts
 return function (this: any, ...args: Parameters<T>) { ... }
@@ -119,9 +120,9 @@ return function (this: any, ...args: Parameters<T>) { ... }
 `clearTimeout` принимает `number | undefined`, но **не принимает `null`**.
 
 ```ts
-clearTimeout(null)       // ❌ TypeScript Error: не тот тип
-clearTimeout(undefined)  // ✅ no-op (безопасная операция)
-clearTimeout(timeoutID ?? undefined)  // ✅ null → undefined, число → число
+clearTimeout(null) // ❌ TypeScript Error: не тот тип
+clearTimeout(undefined) // ✅ no-op (безопасная операция)
+clearTimeout(timeoutID ?? undefined) // ✅ null → undefined, число → число
 ```
 
 ---
@@ -147,13 +148,13 @@ debouncedFetch("react")      // ❌ TS Error: не хватает аргумен
 
 ### `Function` vs Generic — сравнение
 
-| | `func: Function` | `func: T extends (...)` |
-|---|---|---|
-| Проверка типов аргументов | ❌ Нет | ✅ Да |
-| Автодополнение в IDE | ❌ Нет | ✅ Да |
-| Читаемость сигнатуры | Проще | Сложнее |
-| Безопасность | Слабая | Строгая |
-| Когда использовать | Прототип / учебный пример | Продакшен / библиотека |
+|                           | `func: Function`          | `func: T extends (...)` |
+| ------------------------- | ------------------------- | ----------------------- |
+| Проверка типов аргументов | ❌ Нет                    | ✅ Да                   |
+| Автодополнение в IDE      | ❌ Нет                    | ✅ Да                   |
+| Читаемость сигнатуры      | Проще                     | Сложнее                 |
+| Безопасность              | Слабая                    | Строгая                 |
+| Когда использовать        | Прототип / учебный пример | Продакшен / библиотека  |
 
 ---
 
@@ -163,15 +164,16 @@ debouncedFetch("react")      // ❌ TS Error: не хватает аргумен
 
 ```ts
 return function (this: any, ...args: any[]) {
-  const context = this;           // ← сохраняем до входа в setTimeout
-  clearTimeout(timeoutID ?? undefined);
+  const context = this // ← сохраняем до входа в setTimeout
+  clearTimeout(timeoutID ?? undefined)
   timeoutID = setTimeout(function () {
-    func.apply(context, args);    // ← используем сохранённый context
-  }, wait);
-};
+    func.apply(context, args) // ← используем сохранённый context
+  }, wait)
+}
 ```
 
-Внутри `setTimeout(function() {...})` своя область — `this` там был бы `undefined` (strict) или `globalThis`. Поэтому нужна переменная `context`.
+Внутри `setTimeout(function() {...})` своя область — `this` там был бы `undefined` (strict) или `globalThis`. Поэтому
+нужна переменная `context`.
 
 ---
 
@@ -179,16 +181,19 @@ return function (this: any, ...args: any[]) {
 
 ```ts
 return function (this: any, ...args: any[]) {
-  clearTimeout(timeoutID ?? undefined);
-  timeoutID = setTimeout(() => {   // ← стрелка, нет своего this
-    func.apply(this, args);        // ← this берётся из обёртки выше
-  }, wait);
-};
+  clearTimeout(timeoutID ?? undefined)
+  timeoutID = setTimeout(() => {
+    // ← стрелка, нет своего this
+    func.apply(this, args) // ← this берётся из обёртки выше
+  }, wait)
+}
 ```
 
-Стрелочная функция не имеет собственного `this` — она захватывает его **лексически** из объемлющей `function`. Переменная `context` не нужна.
+Стрелочная функция не имеет собственного `this` — она захватывает его **лексически** из объемлющей `function`.
+Переменная `context` не нужна.
 
-> **Важно:** сама обёртка (`return function`) не должна быть стрелкой — иначе `this` зафиксируется навсегда (в момент создания debounce), а не в момент каждого вызова.
+> **Важно:** сама обёртка (`return function`) не должна быть стрелкой — иначе `this` зафиксируется навсегда (в момент
+> создания debounce), а не в момент каждого вызова.
 
 ---
 
@@ -261,24 +266,24 @@ t = 610ms  →  Таймер #5 срабатывает → fetchResults("реа�
 ```ts
 export function debounceV2(func: Function, wait: number = 0): Function {
   //  ┌─ замыкание: timeoutID живёт между всеми вызовами debounced-функции
-  let timeoutID: ReturnType<typeof setTimeout> | null = null;
+  let timeoutID: ReturnType<typeof setTimeout> | null = null
   //  └─ null = нет активного таймера
 
   //  Обычная function (НЕ стрелка) — this определяется в момент вызова
   return function (this: any, ...args: any[]) {
     //  Отменяем предыдущий таймер.
     //  clearTimeout(null) / clearTimeout(undefined) — безопасно, это no-op
-    clearTimeout(timeoutID ?? undefined);
+    clearTimeout(timeoutID ?? undefined)
 
     //  Планируем НОВЫЙ вызов через wait мс
     //  Стрелка внутри захватывает this из объемлющей function (↑)
     timeoutID = setTimeout(() => {
-      timeoutID = null;          // сигнал: таймер отработал
-      func.apply(this, args);    // вызываем func с правильным this и аргументами
-    }, wait);
+      timeoutID = null // сигнал: таймер отработал
+      func.apply(this, args) // вызываем func с правильным this и аргументами
+    }, wait)
     //  Старый таймер отменён → func НЕ будет вызвана "по старому расписанию"
     //  Только этот новый таймер может вызвать func
-  };
+  }
 }
 ```
 
@@ -286,12 +291,12 @@ export function debounceV2(func: Function, wait: number = 0): Function {
 
 ## Типичные ошибки
 
-| Ошибка | Что сломается |
-|--------|--------------|
-| Обёртка — стрелочная функция | `this` зафиксируется навсегда при создании debounce, не при вызове |
-| Не сохранять `this` (V1) / не использовать стрелку (V2) | `func` получит неправильный `this` — баг в методах объектов |
-| Не вызывать `clearTimeout` | Таймеры накапливаются, func вызывается несколько раз |
-| Использовать первые `args`, не последние | Потеря актуального ввода пользователя |
+| Ошибка                                                  | Что сломается                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------ |
+| Обёртка — стрелочная функция                            | `this` зафиксируется навсегда при создании debounce, не при вызове |
+| Не сохранять `this` (V1) / не использовать стрелку (V2) | `func` получит неправильный `this` — баг в методах объектов        |
+| Не вызывать `clearTimeout`                              | Таймеры накапливаются, func вызывается несколько раз               |
+| Использовать первые `args`, не последние                | Потеря актуального ввода пользователя                              |
 
 ---
 
@@ -299,39 +304,40 @@ export function debounceV2(func: Function, wait: number = 0): Function {
 
 ### Временная сложность: `O(1)` на каждый вызов
 
-| Операция | Сложность |
-|----------|-----------|
-| `clearTimeout` | `O(1)` |
-| `setTimeout` | `O(1)` |
+| Операция       | Сложность  |
+| -------------- | ---------- |
+| `clearTimeout` | `O(1)`     |
+| `setTimeout`   | `O(1)`     |
 | Итого на вызов | **`O(1)`** |
 
 Сама функция `func` вызывается только один раз в конце — её сложность не входит в debounce.
 
 ### Пространственная сложность: `O(1)`
 
-Хранится только одна переменная `timeoutID` в замыкании — независимо от количества вызовов. `args` перезаписываются каждый раз, а не накапливаются.
+Хранится только одна переменная `timeoutID` в замыкании — независимо от количества вызовов. `args` перезаписываются
+каждый раз, а не накапливаются.
 
 ---
 
 ## Где применяется Debounce
 
-| Сценарий | wait |
-|----------|------|
-| Поиск по мере ввода (input → API) | 300–500 мс |
-| Автосохранение черновика | 1000–2000 мс |
-| Resize/scroll обработчики | 100–200 мс |
-| Валидация поля после ввода | 300–500 мс |
+| Сценарий                          | wait         |
+| --------------------------------- | ------------ |
+| Поиск по мере ввода (input → API) | 300–500 мс   |
+| Автосохранение черновика          | 1000–2000 мс |
+| Resize/scroll обработчики         | 100–200 мс   |
+| Валидация поля после ввода        | 300–500 мс   |
 
 ---
 
 ## Debounce vs Throttle
 
-| | **Debounce** | **Throttle** |
-|---|---|---|
-| Когда вызывается func | После паузы в вызовах | С фиксированным интервалом |
-| Гарантия вызова | Только если вызовы прекратились | Минимум раз в N мс |
-| Применение | Поиск, автосохранение | Scroll, resize, rate-limit |
-| Аналогия | Лифт ждёт последнего пассажира | Лифт уходит строго по расписанию |
+|                       | **Debounce**                    | **Throttle**                     |
+| --------------------- | ------------------------------- | -------------------------------- |
+| Когда вызывается func | После паузы в вызовах           | С фиксированным интервалом       |
+| Гарантия вызова       | Только если вызовы прекратились | Минимум раз в N мс               |
+| Применение            | Поиск, автосохранение           | Scroll, resize, rate-limit       |
+| Аналогия              | Лифт ждёт последнего пассажира  | Лифт уходит строго по расписанию |
 
 ---
 
@@ -340,29 +346,26 @@ export function debounceV2(func: Function, wait: number = 0): Function {
 ### Паттерн 1 — `useDebouncedValue` (переиспользуемый хук)
 
 ```tsx
-export const useDebouncedValue = (
-  value: string | number | boolean,
-  timeout: number,
-) => {
+export const useDebouncedValue = (value: string | number | boolean, timeout: number) => {
   // Держим "тихое" значение — обновляется только после паузы
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
+  const [debouncedValue, setDebouncedValue] = React.useState(value)
 
   React.useEffect(() => {
     // Каждый раз когда value меняется — планируем обновление через timeout мс
     const timeoutID = setTimeout(() => {
-      setDebouncedValue(value);
-    }, timeout);
+      setDebouncedValue(value)
+    }, timeout)
 
     // Cleanup: если value снова изменится ДО истечения timeout —
     // предыдущий таймер отменяется, новый запускается заново
     // Это и есть debounce: сбрасываем счётчик при каждом изменении
     return () => {
-      clearTimeout(timeoutID);
-    };
-  }, [value, timeout]); // эффект перезапускается при каждом новом value
+      clearTimeout(timeoutID)
+    }
+  }, [value, timeout]) // эффект перезапускается при каждом новом value
 
-  return debouncedValue;
-};
+  return debouncedValue
+}
 ```
 
 **Трассировка** — пользователь быстро вводит "react":
@@ -378,7 +381,8 @@ value="react"→ cleanup отменяет #4, запускает таймер #5
              → ререндер → debouncedValue = "react"
 ```
 
-**Ключевой момент:** `return () => clearTimeout(timeoutID)` — это cleanup функция `useEffect`. React вызывает её перед каждым следующим запуском эффекта. Без неё все таймеры накопились бы и `setDebouncedValue` вызывался бы 5 раз.
+**Ключевой момент:** `return () => clearTimeout(timeoutID)` — это cleanup функция `useEffect`. React вызывает её перед
+каждым следующим запуском эффекта. Без неё все таймеры накопились бы и `setDebouncedValue` вызывался бы 5 раз.
 
 ---
 
@@ -390,11 +394,11 @@ export const InputField: React.FC<InputFieldProps> = ({
   debounceTimeout = 0, // если 0 — debounce отключён
   ...rest
 }) => {
-  const [inputValue, setInputValue] = React.useState('');
+  const [inputValue, setInputValue] = React.useState('')
 
   // inputValue меняется на каждый keystroke, но debouncedValue —
   // только после паузы debounceTimeout мс
-  const debouncedValue = useDebouncedValue(inputValue, debounceTimeout);
+  const debouncedValue = useDebouncedValue(inputValue, debounceTimeout)
 
   React.useEffect(() => {
     // Этот эффект срабатывает только когда debouncedValue "устоялось"
@@ -402,21 +406,19 @@ export const InputField: React.FC<InputFieldProps> = ({
     if (onChange && debounceTimeout) {
       onChange({
         target: { id: rest.id, name: rest.name, value: debouncedValue },
-      } as React.ChangeEvent<HTMLInputElement>);
+      } as React.ChangeEvent<HTMLInputElement>)
     }
-  }, [debouncedValue]); // НЕ зависит от inputValue напрямую
+  }, [debouncedValue]) // НЕ зависит от inputValue напрямую
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(event.target.value); // обновляем сразу — для отображения в UI
+    setInputValue(event.target.value) // обновляем сразу — для отображения в UI
 
     // Если debounce не нужен (timeout=0) — вызываем onChange немедленно
     if (onChange && !debounceTimeout) {
-      onChange(event);
+      onChange(event)
     }
-  };
-
-  // ...
-};
+  }
+}
 ```
 
 **Схема потока данных:**
@@ -434,6 +436,7 @@ useEffect → onChange({ value: "react" }) ← внешний обработчи
 ```
 
 **Зачем два состояния (`inputValue` и `debouncedValue`)?**
+
 - `inputValue` — для `<input value={inputValue}>`. Без него поле будет "лагать", пропуская символы.
 - `debouncedValue` — для `onChange` наружу. Родительский компонент получает только финальное значение.
 
@@ -483,6 +486,7 @@ const { data: customersData } = customersApi.useGetCustomersQuery({
 ```
 
 **Что даёт debounce здесь:**
+
 - Без debounce: 15 HTTP-запросов при вводе "user@example.com"
 - С debounce 300мс: 1–2 запроса (только на "паузах")
 
@@ -506,9 +510,9 @@ onInputChange={(_, newInputValue, reason) => {
 
 ## Сравнение трёх React-паттернов
 
-| | Паттерн 1: хук | Паттерн 2: InputField | Паттерн 3: inline |
-|---|---|---|---|
-| **Переиспользование** | Максимальное | Компонент | Нет (копипаста) |
-| **Гибкость** | Высокая | Средняя | Полная |
-| **Сложность** | Низкая | Средняя | Низкая |
-| **Когда использовать** | Везде, где нужен debounced state | Компонент формы | Быстрый одноразовый случай |
+|                        | Паттерн 1: хук                   | Паттерн 2: InputField | Паттерн 3: inline          |
+| ---------------------- | -------------------------------- | --------------------- | -------------------------- |
+| **Переиспользование**  | Максимальное                     | Компонент             | Нет (копипаста)            |
+| **Гибкость**           | Высокая                          | Средняя               | Полная                     |
+| **Сложность**          | Низкая                           | Средняя               | Низкая                     |
+| **Когда использовать** | Везде, где нужен debounced state | Компонент формы       | Быстрый одноразовый случай |
