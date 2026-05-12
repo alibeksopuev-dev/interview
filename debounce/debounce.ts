@@ -85,6 +85,17 @@ export function debounceV2<T extends (...args: any[]) => any>(
 // РЕШЕНИЕ 3: React Hook — управляет debounced значением между рендерами
 // =================================================================
 
+const React = {
+  useState: (value: any) => [value, () => {}],
+  useEffect: (effect: () => void, deps: any[]) => effect(),
+  FC: <T extends {}>(props: T) => {},
+  ChangeEvent: {
+    target: {
+      value: (value: string) => value,
+    },
+  },
+}
+
 export const useDebouncedValue = (value: string | number | boolean, timeout: number) => {
   // Держим "тихое" значение — обновляется только после паузы
   const [debouncedValue, setDebouncedValue] = React.useState(value)
@@ -106,7 +117,15 @@ export const useDebouncedValue = (value: string | number | boolean, timeout: num
   return debouncedValue
 }
 
-export const InputField: React.FC<InputFieldProps> = ({
+interface InputFieldProps {
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
+  debounceTimeout?: number
+  id: string
+  name: string
+  value: string
+}
+
+const InputField: React.FC<InputFieldProps> = ({
   onChange,
   debounceTimeout = 0, // если 0 — debounce отключён
   ...rest
@@ -135,11 +154,4 @@ export const InputField: React.FC<InputFieldProps> = ({
       onChange(event)
     }
   }
-
-  // ...
 }
-
-// =================================================================
-// РЕШЕНИЕ 4: useDebouncedCallback
-// React-версия debounce с cancel() и flush() — см. useDebouncedCallback.ts
-// =================================================================

@@ -185,6 +185,25 @@ type SendMessageArgs = Parameters<typeof sendMessage>;
 // Результат: [text: string, userId: number]
 ```
 
+### Почему нельзя просто использовать `any[]`?
+
+Если вы пишете универсальную обертку (как `debounce` или `throttle`), у вас есть два пути:
+
+1.  **`any[]` (Плохо):** Вы теряете проверку типов. Вы можете передать что угодно в обернутую функцию, и TypeScript промолчит.
+2.  **`Parameters<T>` (Хорошо):** Вы сохраняете строгую связь. Если оригинал требует `string`, то и обертка потребует `string`.
+
+**Пример из жизни (Debounce):**
+```typescript
+function search(query: string, limit: number) {}
+
+// Если debounce использует Parameters<T>:
+const debouncedSearch = debounce(search, 500);
+
+debouncedSearch("apple", 10); // ✅ Ок
+debouncedSearch(123, "apple"); // ❌ Ошибка: аргументы должны быть [string, number]
+```
+
+
 ---
 
 ## 💡 Real-world Case: `ReturnType<typeof setTimeout>`

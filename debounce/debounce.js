@@ -3,7 +3,7 @@
 // РЕШЕНИЕ 1: обычная function + сохраняем this в переменную context
 // =================================================================
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InputField = exports.useDebouncedValue = exports.debounceV2 = exports.debounce2 = exports.debounce1 = exports.debounceV1 = void 0;
+exports.useDebouncedValue = exports.debounceV2 = exports.debounce2 = exports.debounce1 = exports.debounceV1 = void 0;
 // T extends (...args: any[]) => any — T должен быть функцией,
 // иначе Parameters<T> не скомпилируется
 function debounceV1(func, // T — конкретный тип переданной функции, TS выведет его автоматически
@@ -71,6 +71,16 @@ exports.debounceV2 = debounceV2;
 // =================================================================
 // РЕШЕНИЕ 3: React Hook — управляет debounced значением между рендерами
 // =================================================================
+const React = {
+    useState: (value) => [value, () => { }],
+    useEffect: (effect, deps) => effect(),
+    FC: (props) => { },
+    ChangeEvent: {
+        target: {
+            value: (value) => value,
+        },
+    },
+};
 const useDebouncedValue = (value, timeout) => {
     // Держим "тихое" значение — обновляется только после паузы
     const [debouncedValue, setDebouncedValue] = React.useState(value);
@@ -111,10 +121,4 @@ const InputField = ({ onChange, debounceTimeout = 0, // если 0 — debounce 
             onChange(event);
         }
     };
-    // ...
 };
-exports.InputField = InputField;
-// =================================================================
-// РЕШЕНИЕ 4: useDebouncedCallback
-// React-версия debounce с cancel() и flush() — см. useDebouncedCallback.ts
-// =================================================================
