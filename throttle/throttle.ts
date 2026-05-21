@@ -33,7 +33,10 @@ export function throttle<T extends any[]>(
   }
 }
 
-export default function throttle1<T extends any[]>(func: ThrottleFunction<T>, wait: number): ThrottleFunction<T> {
+export default function throttle1<T extends any[]>(
+  func: ThrottleFunction<T>,
+  wait: number,
+): ThrottleFunction<T> {
   let shouldThrottle = false
 
   return function (...args) {
@@ -54,7 +57,10 @@ export default function throttle1<T extends any[]>(func: ThrottleFunction<T>, wa
 // РЕШЕНИЕ 2: То же самое с более явными комментариями о this
 // (стрелка в setTimeout — this не нужен внутри, меняем только флаг)
 // =================================================================
-export function throttleV2<T extends any[]>(func: ThrottleFunction<T>, wait: number): ThrottleFunction<T> {
+export function throttleV2<T extends any[]>(
+  func: ThrottleFunction<T>,
+  wait: number,
+): ThrottleFunction<T> {
   let shouldThrottle = false
 
   return function (this: any, ...args: T) {

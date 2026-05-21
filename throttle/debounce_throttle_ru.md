@@ -105,6 +105,42 @@ result:  ----X--------X--------X--
 
 Используй rAF для **анимаций и перепозиционирования элементов**. Для запросов к API и условной логики лучше подходят debounce/throttle с интервалом ~200 мс (против 16 мс у rAF).
 
+### Пример: отслеживание позиции курсора через rAF
+
+```tsx
+const rafIdRef = useRef<number | null>(null)
+const pendingPosRef = useRef({ x: 0, y: 0 })
+
+const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect()
+  pendingPosRef.current = {
+    x: Math.round(e.clientX - rect.left),
+    y: Math.round(e.clientY - rect.top),
+  }
+
+  // Отменяем предыдущий кадр (если он ещё не отрисован)
+  if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
+
+  // Планируем обновление на следующий кадр браузера
+  rafIdRef.current = requestAnimationFrame(() => {
+    setPos(pendingPosRef.current)
+    rafIdRef.current = null
+  })
+}
+
+// Очистка при размонтировании
+useEffect(() => {
+  return () => {
+    if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
+  }
+}, [])
+```
+
+**Ключевые моменты:**
+- `cancelAnimationFrame` перед `requestAnimationFrame` гарантирует, что за один кадр выполнится только одна операция, даже если `mousemove` сработал 5 раз.
+- `pendingRef` хранит последнее значение, чтобы rAF-коллбэк всегда брал актуальные данные.
+- В отличие от throttle (фиксированный таймер), rAF синхронизируется с реальным циклом отрисовки — нет лишних перерасчётов между кадрами.
+
 ---
 
 ## Сравнительная таблица

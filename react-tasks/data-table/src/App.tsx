@@ -1,6 +1,7 @@
 import DataTable, { Columns } from './DataTableGeneric.tsx'
 import users from './data/users.ts'
 import houses from './data/houses.ts'
+import { ThrottleShowcase } from './ThrottleExamples.tsx'
 
 type User = (typeof users)[number]
 type House = (typeof houses)[number]
@@ -90,6 +91,8 @@ export default function App() {
         data={houses}
         columns={housesColumns}
       />
+      <hr />
+      <ThrottleShowcase />
     </div>
   )
 }
