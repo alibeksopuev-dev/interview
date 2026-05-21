@@ -10,13 +10,11 @@ export function useThrottledValue<T>(value: T, wait: number): T {
   // useRef хранит стабильный throttled-сеттер между рендерами
   const setter = useRef(
     throttle((v: T) => {
-      console.log(`%c[useThrottledValue] ⏳ Throttled setter CALLED with value:`, 'color: #7c3aed; font-weight: bold;', v)
       setThrottledValue(v)
     }, wait)
   ).current
 
   useEffect(() => {
-    console.log(`[useThrottledValue] ⚡️ Raw value changed:`, value)
     setter(value)
   }, [value, setter])
 
@@ -35,7 +33,6 @@ export const ScrollTracker: FC = () => {
   // Обработчик скролла локального контейнера с использованием throttle
   const handleScrollThrottled = useRef(
     throttle((y: number) => {
-      console.log(`%c[ScrollTracker] ⏳ Throttled scroll position UPDATE:`, 'color: #2563eb; font-weight: bold;', y)
       setScrollY(y)
       setThrottleCount(c => c + 1)
     }, 200)
@@ -43,7 +40,6 @@ export const ScrollTracker: FC = () => {
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const currentScrollY = event.currentTarget.scrollTop
-    console.log(`[ScrollTracker] ⚡️ Raw scroll event:`, currentScrollY)
     setRealScrollY(currentScrollY)
     setRealCount(c => c + 1)
     handleScrollThrottled(currentScrollY)
@@ -103,7 +99,6 @@ export const SubmitButton: FC = () => {
   // Throttled функция отправки
   const throttledSubmit = useRef(
     throttle(() => {
-      console.log(`%c[SubmitButton] ⏳ Throttled submit EXECUTED (API Call Simulation)`, 'color: #d97706; font-weight: bold;')
       const now = new Date()
       const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0')
       setLogs(prev => [
@@ -118,7 +113,6 @@ export const SubmitButton: FC = () => {
   ).current
 
   const handleClick = () => {
-    console.log(`[SubmitButton] ⚡️ Button Clicked`)
     setClickCount(c => c + 1)
     
     // Регистрируем попытку клика
@@ -138,7 +132,6 @@ export const SubmitButton: FC = () => {
       // или если мы хотим показать попытку
       const hasJustAllowed = prev.length > prevLogsLength && prev[0].status === 'allowed' && prev[0].time === timeStr
       if (!hasJustAllowed) {
-        console.log(`%c[SubmitButton] ❌ Click throttled (ignored)`, 'color: #ef4444;')
         return [
           {
             id: Math.random().toString(36).substr(2, 9),
@@ -226,7 +219,6 @@ export const ResizeAwareComponent: FC = () => {
 
     const observer = new ResizeObserver(entries => {
       for (let entry of entries) {
-        console.log(`[ResizeAwareComponent] ⚡️ Raw local box resize event:`, entry.contentRect.width)
         setLocalWidth(entry.contentRect.width)
       }
     })
