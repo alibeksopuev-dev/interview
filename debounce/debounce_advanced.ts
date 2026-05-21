@@ -13,10 +13,14 @@ interface DebouncedFunction<T extends (...args: any[]) => any> {
 }
 
 // T extends (...args: any[]) => any — T должен быть функцией, иначе Parameters<T> не скомпилируется
-export function debounce<T extends (...args: any[]) => any>(func: T, wait: number = 0): DebouncedFunction<T> {
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number = 0,
+): DebouncedFunction<T> {
   // Три переменные замыкания — хранят состояние одного "ожидающего вызова"
   // ReturnType<typeof setTimeout> — кросс-платформенный тип ID таймера (number | NodeJS.Timeout)
   let timeoutId: ReturnType<typeof setTimeout> | undefined
+
   // any — this может быть чем угодно в зависимости от того как вызвали debounced-функцию
   let context: any = undefined
   // Parameters<T> | undefined — последние аргументы вызова, либо undefined если вызовов не было

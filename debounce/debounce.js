@@ -3,7 +3,7 @@
 // РЕШЕНИЕ 1: обычная function + сохраняем this в переменную context
 // =================================================================
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.useDebouncedValue = exports.debounceV2 = exports.debounce2 = exports.debounce1 = exports.debounceV1 = void 0;
+exports.debounce3 = exports.debounceV2 = exports.debounce2 = exports.debounce1 = exports.debounceV1 = void 0;
 // T extends (...args: any[]) => any — T должен быть функцией,
 // иначе Parameters<T> не скомпилируется
 function debounceV1(func, // T — конкретный тип переданной функции, TS выведет его автоматически
@@ -69,56 +69,18 @@ function debounceV2(func, wait = 0) {
 }
 exports.debounceV2 = debounceV2;
 // =================================================================
-// РЕШЕНИЕ 3: React Hook — управляет debounced значением между рендерами
+// РЕШЕНИЕ 3: стрелочная функция + стрелочная функция внутри setTimeout
 // =================================================================
-const React = {
-    useState: (value) => [value, () => { }],
-    useEffect: (effect, deps) => effect(),
-    FC: (props) => { },
-    ChangeEvent: {
-        target: {
-            value: (value) => value,
-        },
-    },
-};
-const useDebouncedValue = (value, timeout) => {
-    // Держим "тихое" значение — обновляется только после паузы
-    const [debouncedValue, setDebouncedValue] = React.useState(value);
-    React.useEffect(() => {
-        // Каждый раз когда value меняется — планируем обновление через timeout мс
-        const timeoutID = setTimeout(() => {
-            setDebouncedValue(value);
-        }, timeout);
-        // Cleanup: если value снова изменится ДО истечения timeout —
-        // предыдущий таймер отменяется, новый запускается заново
-        // Это и есть debounce: сбрасываем счётчик при каждом изменении
-        return () => {
-            clearTimeout(timeoutID);
-        };
-    }, [value, timeout]); // эффект перезапускается при каждом новом value
-    return debouncedValue;
-};
-exports.useDebouncedValue = useDebouncedValue;
-const InputField = ({ onChange, debounceTimeout = 0, // если 0 — debounce отключён
-...rest }) => {
-    const [inputValue, setInputValue] = React.useState('');
-    // inputValue меняется на каждый keystroke, но debouncedValue —
-    // только после паузы debounceTimeout мс
-    const debouncedValue = (0, exports.useDebouncedValue)(inputValue, debounceTimeout);
-    React.useEffect(() => {
-        // Этот эффект срабатывает только когда debouncedValue "устоялось"
-        // т.е. пользователь перестал печатать на debounceTimeout мс
-        if (onChange && debounceTimeout) {
-            onChange({
-                target: { id: rest.id, name: rest.name, value: debouncedValue },
-            });
-        }
-    }, [debouncedValue]); // НЕ зависит от inputValue напрямую
-    const handleChange = (event) => {
-        setInputValue(event.target.value); // обновляем сразу — для отображения в UI
-        // Если debounce не нужен (timeout=0) — вызываем onChange немедленно
-        if (onChange && !debounceTimeout) {
-            onChange(event);
-        }
+const debounce3 = (func, wait = 0) => {
+    let timeoutId = null;
+    // Arrow function does not have a `this` parameter
+    return function (...args) {
+        const context = this;
+        clearTimeout(timeoutId ?? undefined);
+        timeoutId = setTimeout(() => {
+            timeoutId = null;
+            func.apply(context, args);
+        }, wait);
     };
 };
+exports.debounce3 = debounce3;

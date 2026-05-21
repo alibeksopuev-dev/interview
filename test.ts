@@ -144,7 +144,8 @@ function curry(func: Function): Function {
       return func.apply(this, args)
     }
 
-    return (arg: any) => (arg === undefined ? curried.apply(this, args) : curried.apply(this, [...args, arg]))
+    return (arg: any) =>
+      arg === undefined ? curried.apply(this, args) : curried.apply(this, [...args, arg])
 
     // bind - более гибкий вариант. Позволяет передавать аргументы любыми пачками: curried(1, 2)(3) или curried(1)(2, 3).
     // return curried.bind(this, ...args)
@@ -165,3 +166,19 @@ const curriedGreet = curry(person.greet)
 // Важно вызвать с правильным контекстом
 const helloAlibek = curriedGreet.call(person, 'Hello')
 console.log(helloAlibek('!')) // "Hello, Alibek!"
+
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number = 0,
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  return function (this: any, ...args: any[]) {
+    clearTimeout(timeoutId ?? undefined)
+
+    timeoutId = setTimeout(() => {
+      timeoutId = null
+      func.apply(this, args)
+    }, wait)
+  }
+}

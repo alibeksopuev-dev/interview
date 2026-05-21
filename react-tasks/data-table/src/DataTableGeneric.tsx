@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { InputField } from './InputField'
 
 type SortDirection = 'asc' | 'desc'
 
@@ -7,7 +8,7 @@ type ColumnDef<T> = Readonly<{
   key: string
   renderCell: (row: T) => React.ReactNode
   comparator: (a: T, b: T, sortDirection: SortDirection) => number
-  filterType: 'string' | 'range' | null
+  filterType?: 'string' | 'range' | null
 }>
 
 export type Columns<T> = ReadonlyArray<ColumnDef<T>>
@@ -26,7 +27,12 @@ function paginate<T>(data: Array<T>, currentPage: number, pageSize: number) {
   }
 }
 
-const sortData = <T,>(data: Array<T>, columns: Columns<T>, sortField: string | null, sortDirection: SortDirection) => {
+const sortData = <T,>(
+  data: Array<T>,
+  columns: Columns<T>,
+  sortField: string | null,
+  sortDirection: SortDirection,
+) => {
   const clonedData = data.slice()
   const comparator = columns.find(column => column.key === sortField)?.comparator
   if (!comparator) {
@@ -120,6 +126,14 @@ export default function DataTable<T extends { id: number }>({
             Next
           </button>
         </div>
+        <InputField
+          id='test-input'
+          name='test-input'
+          debounceTimeout={500}
+          onChange={event => {
+            console.log(event.target.value)
+          }}
+        />
       </div>
     </div>
   )

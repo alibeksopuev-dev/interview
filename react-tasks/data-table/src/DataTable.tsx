@@ -24,7 +24,11 @@ const paginateUsers = (usersList: Array<User>, currentPage: number, pageSize: nu
   }
 }
 
-const sortUsers = (usersList: Array<User>, sortField: SortField | null, sortDirection: SortDirection) => {
+const sortUsers = (
+  usersList: Array<User>,
+  sortField: SortField | null,
+  sortDirection: SortDirection,
+) => {
   const clonedUsers = usersList.slice()
 
   switch (sortField) {
@@ -37,7 +41,9 @@ const sortUsers = (usersList: Array<User>, sortField: SortField | null, sortDire
     case 'name':
     case 'occupation': {
       return clonedUsers.sort((a, b) =>
-        sortDirection === 'asc' ? a[sortField].localeCompare(b[sortField]) : b[sortField].localeCompare(a[sortField]),
+        sortDirection === 'asc'
+          ? a[sortField].localeCompare(b[sortField])
+          : b[sortField].localeCompare(a[sortField]),
       )
     }
     default: {

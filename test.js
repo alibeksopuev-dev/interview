@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.insertIntervalBinary = exports.mergeIntervals = exports.compressRanges = void 0;
+exports.debounce = exports.insertIntervalBinary = exports.mergeIntervals = exports.compressRanges = void 0;
 const binarySearch = (arr, target) => {
     let leftIndex = 0;
     let rightIndex = arr.length - 1;
@@ -130,7 +130,7 @@ function curry(func) {
         if (args.length >= func.length) {
             return func.apply(this, args);
         }
-        return (arg) => (arg === undefined ? curried.apply(this, args) : curried.apply(this, [...args, arg]));
+        return (arg) => arg === undefined ? curried.apply(this, args) : curried.apply(this, [...args, arg]);
         // bind - более гибкий вариант. Позволяет передавать аргументы любыми пачками: curried(1, 2)(3) или curried(1)(2, 3).
         // return curried.bind(this, ...args)
     };
@@ -148,3 +148,14 @@ const curriedGreet = curry(person.greet);
 // Важно вызвать с правильным контекстом
 const helloAlibek = curriedGreet.call(person, 'Hello');
 console.log(helloAlibek('!')); // "Hello, Alibek!"
+const debounce = (func, wait = 0) => {
+    let timeoutId = null;
+    return function (...args) {
+        clearTimeout(timeoutId ?? undefined);
+        timeoutId = setTimeout(() => {
+            timeoutId = null;
+            func.apply(this, args);
+        }, wait);
+    };
+};
+exports.debounce = debounce;
