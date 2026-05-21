@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, FC, UIEvent } from 'react'
-import { throttle } from '../../../throttle/throttle'
+import { throttle } from '../../../throttle/throttle.ts'
 
 // =================================================================
 // 1. Вспомогательный хук: useThrottledValue
