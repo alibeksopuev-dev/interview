@@ -173,12 +173,52 @@ export const debounce = <T extends (...args: any[]) => any>(
 ): ((...args: Parameters<T>) => void) => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
 
-  return function (this: any, ...args: any[]) {
+  return function (this: any, ...args: Parameters<T>) {
     clearTimeout(timeoutId ?? undefined)
 
     timeoutId = setTimeout(() => {
       timeoutId = null
       func.apply(this, args)
     }, wait)
+  }
+}
+
+type User = {
+  id: number
+  name: string
+  email: string
+}
+
+async function fetchUsers(query: string, limit: number): Promise<User[]> {
+  const res = await fetch(
+    `https://jsonplaceholder.typicode.com/users?name=${query}&_limit=${limit}`,
+  )
+  if (!res.ok) throw new Error('Failed to fetch users')
+  return res.json()
+}
+
+const debouncedFetch = debounce(fetchUsers, 1000)
+
+debouncedFetch('alibek', 10)
+
+type ThrottleFunction<T extends any[]> = (...args: T) => any
+
+export const throttle = <T extends any[]>(
+  func: ThrottleFunction<T>,
+  wait: number,
+): ThrottleFunction<T> => {
+  let isLocked = false
+
+  return function (this: any, ...args: T) {
+    if (isLocked) {
+      return
+    }
+
+    isLocked = true
+    setTimeout(() => {
+      isLocked = false
+    }, wait)
+
+    func.apply(this, args)
   }
 }

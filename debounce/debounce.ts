@@ -98,12 +98,11 @@ export const debounce3 = <T extends (...args: any[]) => any>(
 
   // Arrow function does not have a `this` parameter
   return function (this: any, ...args: Parameters<T>) {
-    const context = this
     clearTimeout(timeoutId ?? undefined)
 
     timeoutId = setTimeout(() => {
       timeoutId = null
-      func.apply(context, args)
+      func.apply(this, args)
     }, wait)
   }
 }

@@ -13,20 +13,20 @@ export function throttle<T extends any[]>(
   func: ThrottleFunction<T>, // конкретный тип переданной функции
   wait: number,
 ): ThrottleFunction<T> {
-  // shouldThrottle — булев флаг-замок:
+  // isLocked — булев флаг-замок:
   // false = окно открыто, можно вызывать func
   // true  = окно заблокировано, вызовы игнорируются
-  let shouldThrottle = false
+  let isLocked = false
 
-  // Обёртка — обычная function (НЕ стрелка): this определяется в момент вызова
   return function (this: any, ...args: T) {
-    if (shouldThrottle) {
+    if (isLocked) {
       return // окно заблокировано — просто игнорируем вызов, ничего не планируем
     }
 
-    shouldThrottle = true // закрываем окно — следующие вызовы будут проигнорированы
+    isLocked = true // закрываем окно — следующие вызовы будут проигнорированы
+    // планируем снятие блокировки через wait мс
     setTimeout(function () {
-      shouldThrottle = false // через wait мс открываем окно снова
+      isLocked = false // через wait мс открываем окно снова
     }, wait)
 
     func.apply(this, args) // вызываем func НЕМЕДЛЕННО с правильным this и аргументами
@@ -38,8 +38,8 @@ export default function throttle1<T extends any[]>(
   wait: number,
 ): ThrottleFunction<T> {
   let shouldThrottle = false
-
-  return function (...args) {
+  // Добавляем явный `this: any` и типизируем аргументы как `T`
+  return function (this: any, ...args: T) {
     if (shouldThrottle) {
       return
     }
@@ -48,8 +48,7 @@ export default function throttle1<T extends any[]>(
     setTimeout(function () {
       shouldThrottle = false
     }, wait)
-
-    func.apply(this, args)
+    func.apply(this, args) // Теперь и this, и args типизированы корректно
   }
 }
 
@@ -70,11 +69,10 @@ export function throttleV2<T extends any[]>(
 
     shouldThrottle = true
     setTimeout(() => {
-      // стрелка здесь безопасна: внутри только shouldThrottle = false
-      shouldThrottle = false // this не используется — стрелка vs function не имеет значения
+      shouldThrottle = false
     }, wait)
 
-    func.apply(this, args) // this из обёртки передаём через apply
+    func.apply(this, args)
   }
 }
 

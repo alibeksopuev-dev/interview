@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState, FC, UIEvent } from 'react'
-import { throttle } from '../../../throttle/throttle.ts'
+import { throttle } from '../../../throttle/throttle'
 
 // =================================================================
 // 1. Вспомогательный хук: useThrottledValue
 // =================================================================
 export function useThrottledValue<T>(value: T, wait: number): T {
   const [throttledValue, setThrottledValue] = useState(value)
-  
+
   // useRef хранит стабильный throttled-сеттер между рендерами
   const setter = useRef(
     throttle((v: T) => {
       setThrottledValue(v)
-    }, wait)
+    }, wait),
   ).current
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export const ScrollTracker: FC = () => {
     throttle((y: number) => {
       setScrollY(y)
       setThrottleCount(c => c + 1)
-    }, 200)
+    }, 200),
   ).current
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
@@ -46,36 +46,43 @@ export const ScrollTracker: FC = () => {
   }
 
   return (
-    <div className="throttle-card">
-      <div className="card-header">
+    <div className='throttle-card'>
+      <div className='card-header'>
         <h3>1. Scroll Tracker (Скролл)</h3>
-        <span className="badge badge-blue">Interval: 200ms</span>
+        <span className='badge badge-blue'>Interval: 200ms</span>
       </div>
-      <p className="card-desc">
-        Покрутите список ниже. Вы увидите разницу между количеством реальных событий скролла браузера и фактически обработанными через <code>throttle</code>.
+      <p className='card-desc'>
+        Покрутите список ниже. Вы увидите разницу между количеством реальных событий скролла
+        браузера и фактически обработанными через <code>throttle</code>.
       </p>
-      
-      <div className="scroll-demo-container">
-        <div className="scroll-box" onScroll={handleScroll}>
-          <div className="scroll-content">
+
+      <div className='scroll-demo-container'>
+        <div
+          className='scroll-box'
+          onScroll={handleScroll}
+        >
+          <div className='scroll-content'>
             {[...Array(50)].map((_, i) => (
-              <div key={i} className="scroll-item">
+              <div
+                key={i}
+                className='scroll-item'
+              >
                 Элемент списка #{i + 1}
               </div>
             ))}
           </div>
         </div>
 
-        <div className="metrics-grid">
-          <div className="metric-box">
-            <span className="metric-label">Реальный ScrollY</span>
-            <span className="metric-value">{Math.round(realScrollY)}px</span>
-            <span className="metric-sub">Событий: {realCount}</span>
+        <div className='metrics-grid'>
+          <div className='metric-box'>
+            <span className='metric-label'>Реальный ScrollY</span>
+            <span className='metric-value'>{Math.round(realScrollY)}px</span>
+            <span className='metric-sub'>Событий: {realCount}</span>
           </div>
-          <div className="metric-box throttled">
-            <span className="metric-label">Throttled ScrollY</span>
-            <span className="metric-value highlight">{Math.round(scrollY)}px</span>
-            <span className="metric-sub">Вызовов: {throttleCount}</span>
+          <div className='metric-box throttled'>
+            <span className='metric-label'>Throttled ScrollY</span>
+            <span className='metric-value highlight'>{Math.round(scrollY)}px</span>
+            <span className='metric-sub'>Вызовов: {throttleCount}</span>
           </div>
         </div>
       </div>
@@ -100,7 +107,8 @@ export const SubmitButton: FC = () => {
   const throttledSubmit = useRef(
     throttle(() => {
       const now = new Date()
-      const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0')
+      const timeStr =
+        now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0')
       setLogs(prev => [
         {
           id: Math.random().toString(36).substr(2, 9),
@@ -109,20 +117,21 @@ export const SubmitButton: FC = () => {
         },
         ...prev.slice(0, 7), // Храним последние 8 записей
       ])
-    }, 2000) // не чаще раза в 2 секунды
+    }, 2000), // не чаще раза в 2 секунды
   ).current
 
   const handleClick = () => {
     setClickCount(c => c + 1)
-    
+
     // Регистрируем попытку клика
     const now = new Date()
-    const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0')
-    
+    const timeStr =
+      now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0')
+
     // Вызываем throttledSubmit
     const prevLogsLength = logs.length
     throttledSubmit()
-    
+
     // Проверим, был ли клик проигнорирован (shouldThrottle в throttle.ts равен true)
     // Так как throttle выполняется синхронно в первый раз, мы можем просто добавить "ignored" запись,
     // если allowed запись не добавилась первой в очереди в этот же тик.
@@ -130,7 +139,8 @@ export const SubmitButton: FC = () => {
     setLogs(prev => {
       // Если последний элемент в логе не обновился на "allowed" в текущее время,
       // или если мы хотим показать попытку
-      const hasJustAllowed = prev.length > prevLogsLength && prev[0].status === 'allowed' && prev[0].time === timeStr
+      const hasJustAllowed =
+        prev.length > prevLogsLength && prev[0].status === 'allowed' && prev[0].time === timeStr
       if (!hasJustAllowed) {
         return [
           {
@@ -151,38 +161,47 @@ export const SubmitButton: FC = () => {
   }
 
   return (
-    <div className="throttle-card">
-      <div className="card-header">
+    <div className='throttle-card'>
+      <div className='card-header'>
         <h3>2. Submit Button (Спам-клики)</h3>
-        <span className="badge badge-amber">Interval: 2000ms</span>
+        <span className='badge badge-amber'>Interval: 2000ms</span>
       </div>
-      <p className="card-desc">
+      <p className='card-desc'>
         Нажмите кнопку несколько раз подряд. Вызовы блокируются на 2 секунды после первого клика.
       </p>
 
-      <div className="submit-demo-container">
-        <div className="action-row">
-          <button className="btn btn-submit" onClick={handleClick}>
+      <div className='submit-demo-container'>
+        <div className='action-row'>
+          <button
+            className='btn btn-submit'
+            onClick={handleClick}
+          >
             Отправить форму
           </button>
-          <button className="btn btn-clear" onClick={clearLogs}>
+          <button
+            className='btn btn-clear'
+            onClick={clearLogs}
+          >
             Очистить
           </button>
-          <span className="click-counter">Всего кликов: {clickCount}</span>
+          <span className='click-counter'>Всего кликов: {clickCount}</span>
         </div>
 
-        <div className="log-panel">
-          <div className="log-header">Лог событий (клик по кнопке)</div>
-          <div className="log-list">
+        <div className='log-panel'>
+          <div className='log-header'>Лог событий (клик по кнопке)</div>
+          <div className='log-list'>
             {logs.length === 0 ? (
-              <div className="log-empty">Нажмите кнопку, чтобы начать логирование...</div>
+              <div className='log-empty'>Нажмите кнопку, чтобы начать логирование...</div>
             ) : (
               logs.map(log => (
-                <div key={log.id} className={`log-item ${log.status}`}>
-                  <span className="log-time">[{log.time}]</span>
-                  <span className="log-text">
-                    {log.status === 'allowed' 
-                      ? '✅ Запрос отправлен на сервер' 
+                <div
+                  key={log.id}
+                  className={`log-item ${log.status}`}
+                >
+                  <span className='log-time'>[{log.time}]</span>
+                  <span className='log-text'>
+                    {log.status === 'allowed'
+                      ? '✅ Запрос отправлен на сервер'
                       : '❌ Проигнорировано (throttle)'}
                   </span>
                 </div>
@@ -230,44 +249,47 @@ export const ResizeAwareComponent: FC = () => {
   const throttledLocalWidth = useThrottledValue(localWidth, 300)
 
   return (
-    <div className="throttle-card">
-      <div className="card-header">
+    <div className='throttle-card'>
+      <div className='card-header'>
         <h3>3. Resize Tracker (Ресайз)</h3>
-        <span className="badge badge-purple">Interval: 300ms</span>
+        <span className='badge badge-purple'>Interval: 300ms</span>
       </div>
-      <p className="card-desc">
+      <p className='card-desc'>
         Измените ширину окна браузера или потяните за правый нижний угол тестового блока ниже.
       </p>
 
-      <div className="resize-demo-container">
+      <div className='resize-demo-container'>
         {/* Тестовый ресайз-бокс */}
-        <div className="resize-interactive-area">
-          <div ref={resizeBoxRef} className="resizable-box">
-            <span className="resizable-text">Потяни меня! ↔️</span>
+        <div className='resize-interactive-area'>
+          <div
+            ref={resizeBoxRef}
+            className='resizable-box'
+          >
+            <span className='resizable-text'>Потяни меня! ↔️</span>
           </div>
-          
-          <div className="resize-metrics">
-            <div className="metric-row">
+
+          <div className='resize-metrics'>
+            <div className='metric-row'>
               <span>Реальная ширина блока:</span>
-              <span className="value">{Math.round(localWidth)}px</span>
+              <span className='value'>{Math.round(localWidth)}px</span>
             </div>
-            <div className="metric-row throttled">
+            <div className='metric-row throttled'>
               <span>Throttled ширина (300мс):</span>
-              <span className="value highlight">{Math.round(throttledLocalWidth)}px</span>
+              <span className='value highlight'>{Math.round(throttledLocalWidth)}px</span>
             </div>
           </div>
         </div>
 
         {/* Ширина окна */}
-        <div className="window-resize-box">
-          <div className="window-metrics">
-            <div className="metric-box">
-              <span className="metric-label">Ширина окна (реальная)</span>
-              <span className="metric-value">{windowWidth}px</span>
+        <div className='window-resize-box'>
+          <div className='window-metrics'>
+            <div className='metric-box'>
+              <span className='metric-label'>Ширина окна (реальная)</span>
+              <span className='metric-value'>{windowWidth}px</span>
             </div>
-            <div className="metric-box throttled">
-              <span className="metric-label">Ширина окна (throttled)</span>
-              <span className="metric-value highlight">{throttledWindowWidth}px</span>
+            <div className='metric-box throttled'>
+              <span className='metric-label'>Ширина окна (throttled)</span>
+              <span className='metric-value highlight'>{throttledWindowWidth}px</span>
             </div>
           </div>
         </div>
@@ -291,7 +313,7 @@ export const RafTracker: FC = () => {
   const throttledSetPos = useRef(
     throttle((pos: { x: number; y: number }) => {
       setThrottledPos(pos)
-    }, 100)
+    }, 100),
   ).current
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -321,41 +343,47 @@ export const RafTracker: FC = () => {
   }, [])
 
   return (
-    <div className="throttle-card">
-      <div className="card-header">
+    <div className='throttle-card'>
+      <div className='card-header'>
         <h3>4. rAF Tracker (курсор мыши)</h3>
-        <span className="badge badge-green">~16ms (60fps)</span>
+        <span className='badge badge-green'>~16ms (60fps)</span>
       </div>
-      <p className="card-desc">
-        Двигайте курсор по области ниже. <strong>rAF</strong> синхронизируется с перерисовкой браузера (~16 мс), <strong>throttle</strong> работает по фиксированному таймеру (100 мс). Счётчики показывают реальную частоту обновлений.
+      <p className='card-desc'>
+        Двигайте курсор по области ниже. <strong>rAF</strong> синхронизируется с перерисовкой
+        браузера (~16 мс), <strong>throttle</strong> работает по фиксированному таймеру (100 мс).
+        Счётчики показывают реальную частоту обновлений.
       </p>
 
       <div
-        className="raf-demo-area"
+        className='raf-demo-area'
         onMouseMove={handleMouseMove}
       >
         <div
-          className="raf-cursor-dot"
+          className='raf-cursor-dot'
           style={{ left: rafPos.x, top: rafPos.y }}
         />
-        <span className="raf-hint">Двигай мышь здесь</span>
+        <span className='raf-hint'>Двигай мышь здесь</span>
       </div>
 
-      <div className="metrics-grid">
-        <div className="metric-box">
-          <span className="metric-label">Сырые события</span>
-          <span className="metric-value">{rawCount}</span>
-          <span className="metric-sub">mousemove всего</span>
+      <div className='metrics-grid'>
+        <div className='metric-box'>
+          <span className='metric-label'>Сырые события</span>
+          <span className='metric-value'>{rawCount}</span>
+          <span className='metric-sub'>mousemove всего</span>
         </div>
-        <div className="metric-box throttled">
-          <span className="metric-label">Throttle (100мс)</span>
-          <span className="metric-value highlight">{throttledPos.x}, {throttledPos.y}</span>
-          <span className="metric-sub">каждые 100мс</span>
+        <div className='metric-box throttled'>
+          <span className='metric-label'>Throttle (100мс)</span>
+          <span className='metric-value highlight'>
+            {throttledPos.x}, {throttledPos.y}
+          </span>
+          <span className='metric-sub'>каждые 100мс</span>
         </div>
-        <div className="metric-box raf">
-          <span className="metric-label">rAF (~16мс)</span>
-          <span className="metric-value highlight">{rafPos.x}, {rafPos.y}</span>
-          <span className="metric-sub">кадров: {rafCount}</span>
+        <div className='metric-box raf'>
+          <span className='metric-label'>rAF (~16мс)</span>
+          <span className='metric-value highlight'>
+            {rafPos.x}, {rafPos.y}
+          </span>
+          <span className='metric-sub'>кадров: {rafCount}</span>
         </div>
       </div>
     </div>
@@ -367,13 +395,14 @@ export const RafTracker: FC = () => {
 // =================================================================
 export const ThrottleShowcase: FC = () => {
   return (
-    <div className="throttle-showcase-container">
-      <h2 className="showcase-title">Демонстрация работы Throttle (Ограничение частоты)</h2>
-      <p className="showcase-subtitle">
-        Throttle вызывает функцию немедленно при первом событии, а затем временно блокирует последующие вызовы на заданный интервал.
+    <div className='throttle-showcase-container'>
+      <h2 className='showcase-title'>Демонстрация работы Throttle (Ограничение частоты)</h2>
+      <p className='showcase-subtitle'>
+        Throttle вызывает функцию немедленно при первом событии, а затем временно блокирует
+        последующие вызовы на заданный интервал.
       </p>
 
-      <div className="throttle-grid">
+      <div className='throttle-grid'>
         <ScrollTracker />
         <SubmitButton />
         <ResizeAwareComponent />

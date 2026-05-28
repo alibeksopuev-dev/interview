@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debounce = exports.insertIntervalBinary = exports.mergeIntervals = exports.compressRanges = void 0;
+exports.throttle = exports.debounce = exports.insertIntervalBinary = exports.mergeIntervals = exports.compressRanges = void 0;
 const binarySearch = (arr, target) => {
     let leftIndex = 0;
     let rightIndex = arr.length - 1;
@@ -159,3 +159,25 @@ const debounce = (func, wait = 0) => {
     };
 };
 exports.debounce = debounce;
+async function fetchUsers(query, limit) {
+    const res = await fetch(`https://jsonplaceholder.typicode.com/users?name=${query}&_limit=${limit}`);
+    if (!res.ok)
+        throw new Error('Failed to fetch users');
+    return res.json();
+}
+const debouncedFetch = (0, exports.debounce)(fetchUsers, 1000);
+debouncedFetch('alibek', 10);
+const throttle = (func, wait) => {
+    let isLocked = false;
+    return function (...args) {
+        if (isLocked) {
+            return;
+        }
+        isLocked = true;
+        setTimeout(() => {
+            isLocked = false;
+        }, wait);
+        func.apply(this, args);
+    };
+};
+exports.throttle = throttle;

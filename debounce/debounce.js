@@ -75,11 +75,10 @@ const debounce3 = (func, wait = 0) => {
     let timeoutId = null;
     // Arrow function does not have a `this` parameter
     return function (...args) {
-        const context = this;
         clearTimeout(timeoutId ?? undefined);
         timeoutId = setTimeout(() => {
             timeoutId = null;
-            func.apply(context, args);
+            func.apply(this, args);
         }, wait);
     };
 };
