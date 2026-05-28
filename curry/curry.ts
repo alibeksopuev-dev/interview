@@ -82,3 +82,24 @@ console.log('--- Curry with Bind Tests ---')
 console.log(sumWithBind(1, 2)(3)) // 6
 
 export { curry, curryWithBind }
+
+function curry3<T extends (...args: any[]) => any>(func: T) {
+  return function curried(this: any, ...args: any[]): any {
+    if (args.length >= func.length) {
+      return func.apply(this, args);        // ✅ enough args — call it
+    }
+    return function (this: any, ...moreArgs: any[]) {
+      return curried.apply(this, [...args, ...moreArgs]); // ✅ accumulate & recurse
+    };
+  };
+}
+
+const add = (a: number, b: number, c: number) => a + b + c;
+const curriedAdd = curry3(add);
+
+curriedAdd(1)(2)(3);   // 6
+curriedAdd(1, 2)(3);   // 6
+curriedAdd(1)(2, 3);   // 6
+curriedAdd(1, 2, 3);   // 6
+
+

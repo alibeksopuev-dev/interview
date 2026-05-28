@@ -138,17 +138,14 @@ export function insertIntervalBinary(intervals: number[][], newInterval: number[
   return result
 }
 
-function curry(func: Function): Function {
-  return function curried(this: any, ...args: any[]): any {
+function curry<T extends (...args: any[]) => any>(func: T): Function {
+  return function curried(this: any, ...args: any[]) {
     if (args.length >= func.length) {
       return func.apply(this, args)
     }
 
     return (arg: any) =>
-      arg === undefined ? curried.apply(this, args) : curried.apply(this, [...args, arg])
-
-    // bind - более гибкий вариант. Позволяет передавать аргументы любыми пачками: curried(1, 2)(3) или curried(1)(2, 3).
-    // return curried.bind(this, ...args)
+      arg === undefined ? func.apply(this, args) : func.apply(this, [...args, arg])
   }
 }
 

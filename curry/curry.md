@@ -118,3 +118,110 @@ function curry(func: Function): Function {
 │  Ключевые концепции     │ Closure, Arity    │
 └─────────────────────────┴───────────────────┘
 ```
+
+---
+
+## 🧪 6. Code Review: Разбор реализаций по шагам
+
+### ❌ Вариант 0 — Неправильная реализация (антипример)
+
+```typescript
+function curry<T extends (...args: any[]) => any>(func: T): (...args: Parameters<T>) => void {
+  return function (this: any, ...args: Parameters<T>) {
+    if (func.length >= args.length) {  // ❌ условие перевёрнуто
+      func.apply(this, args)           // ❌ нет return
+    }
+    // ❌ всегда выполняется — нет else / early return
+    return (arg: any) =>
+      arg === undefined ? func.apply(this, args) : func.apply(this, [...args, arg])
+  }
+}
+```
+
+**Три ошибки:**
+
+| # | Проблема | Исправление |
+|---|---|---|
+| 1 | Условие перевёрнуто: `func.length >= args.length` | → `args.length >= func.length` |
+| 2 | Нет `return` перед `func.apply` — результат теряется | → `return func.apply(this, args)` |
+| 3 | Нет `else` / раннего выхода — стрелочная функция возвращается всегда | → добавить `return` или `else` |
+
+---
+
+### ⚠️ Вариант 1 — Closure-based (с ограничением)
+
+```typescript
+function curry(func: Function): Function {
+  return function curried(this: any, ...args: any[]): any {
+    if (args.length >= func.length) {
+      return func.apply(this, args)  // ✅
+    }
+    return (arg: any) =>             // ⚠️ только один аргумент за раз
+      arg === undefined
+        ? curried.apply(this, args)
+        : curried.apply(this, [...args, arg])
+  }
+}
+```
+
+**Вердикт:** Корректен для базовых случаев, но принимает **только один аргумент** за раз на каждом шаге.
+
+```typescript
+curriedSum(1)(2)(3)    // ✅ 6
+curriedSum(1, 2)(3)    // ❌ игнорирует 2
+curriedSum(1)(2, 3)    // ❌ игнорирует 3
+```
+
+---
+
+### ✅ Вариант 2 — bind-based (рекомендуемый)
+
+```typescript
+function curryWithBind(func: Function): Function {
+  return function curried(this: any, ...args: any[]): any {
+    if (args.length >= func.length) {
+      return func.apply(this, args)
+    }
+    return curried.bind(this, ...args)
+  }
+}
+```
+
+**Почему это работает:** `curried.bind(this, ...args)` создаёт новую функцию с уже «вшитыми» аргументами. При следующем вызове новые аргументы автоматически добавляются в конец — JS делает это сам.
+
+```typescript
+sumWithBind(1)(2)(3)    // ✅ 6
+sumWithBind(1, 2)(3)    // ✅ 6
+sumWithBind(1)(2, 3)    // ✅ 6
+sumWithBind(1, 2, 3)    // ✅ 6
+```
+
+---
+
+### ✅ Вариант 3 — Generic + spread (явное накопление)
+
+```typescript
+function curry<T extends (...args: any[]) => any>(func: T) {
+  return function curried(this: any, ...args: any[]): any {
+    if (args.length >= func.length) {
+      return func.apply(this, args)
+    }
+    return function (this: any, ...moreArgs: any[]) {
+      return curried.apply(this, [...args, ...moreArgs])  // ✅ spread вместо одного arg
+    }
+  }
+}
+```
+
+Аналог `bind`-версии, но с явным управлением накоплением через `...moreArgs`.
+
+---
+
+### 📊 Итоговое сравнение всех вариантов
+
+| Вариант | `f(a)(b)(c)` | `f(a,b)(c)` | TypeScript Generic | Контекст `this` |
+|---|---|---|---|---|
+| ❌ Вариант 0 (антипример) | ❌ | ❌ | ✅ | ❌ |
+| ⚠️ Вариант 1 (closure) | ✅ | ❌ | ❌ | ✅ |
+| ✅ Вариант 2 (bind) | ✅ | ✅ | ❌ | ✅ |
+| ✅ Вариант 3 (generic + spread) | ✅ | ✅ | ✅ | ✅ |

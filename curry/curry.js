@@ -76,3 +76,19 @@ const sumWithBind = curryWithBind(sum);
 console.log('--- Curry with Bind Tests ---');
 // bind-версия позволяет передавать по несколько аргументов
 console.log(sumWithBind(1, 2)(3)); // 6
+function curry3(func) {
+    return function curried(...args) {
+        if (args.length >= func.length) {
+            return func.apply(this, args); // ✅ enough args — call it
+        }
+        return function (...moreArgs) {
+            return curried.apply(this, [...args, ...moreArgs]); // ✅ accumulate & recurse
+        };
+    };
+}
+const add = (a, b, c) => a + b + c;
+const curriedAdd = curry3(add);
+curriedAdd(1)(2)(3); // 6
+curriedAdd(1, 2)(3); // 6
+curriedAdd(1)(2, 3); // 6
+curriedAdd(1, 2, 3); // 6
