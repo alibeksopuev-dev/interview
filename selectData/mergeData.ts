@@ -40,3 +40,37 @@ export default function mergeData(sessions: Array<Session>): Array<Session> {
     equipment: Array.from(session.equipment).sort(),
   }))
 }
+
+export function mergeDataOld(sessions: Array<Session>): Array<Session> {
+  const results: Array<{
+    user: number;
+    duration: number;
+    equipment: Set<string>;
+  }> = [];
+  // Point each user id at the cloned session already stored in `results`.
+  const sessionsForUser = new Map();
+
+  sessions.forEach((session) => {
+    if (sessionsForUser.has(session.user)) {
+      const userSession = sessionsForUser.get(session.user);
+      userSession.duration += session.duration;
+      session.equipment.forEach((equipment) => {
+        userSession.equipment.add(equipment);
+      });
+    } else {
+      const clonedSession = {
+        ...session,
+        // Use a Set internally so repeated equipment is deduplicated while merging.
+        equipment: new Set(session.equipment),
+      };
+      sessionsForUser.set(session.user, clonedSession);
+      results.push(clonedSession);
+    }
+  });
+
+  // Convert the internal Set back to the sorted array shape expected by callers.
+  return results.map((session) => ({
+    ...session,
+    equipment: Array.from(session.equipment).sort(),
+  }));
+}

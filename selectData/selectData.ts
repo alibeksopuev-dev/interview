@@ -35,7 +35,7 @@ export default function selectData(sessions: Array<Session>, options?: Options):
 
   reversedSessions.forEach(session => {
     if (options?.merge && sessionsForUser.has(session.user)) {
-      // Пользователь уже встречался — обновляем существующий мёрдженный объект
+      // Пользователь уже встречался — обновляем существующий объединенный объект
       const userSession = sessionsForUser.get(session.user)!
       userSession.duration += session.duration
       session.equipment.forEach(e => userSession.equipment.add(e))
@@ -55,7 +55,7 @@ export default function selectData(sessions: Array<Session>, options?: Options):
   })
 
   // Восстанавливаем оригинальный порядок:
-  // при merge — «место» мёрдженной строки = позиция последнего вхождения пользователя
+  // при merge — «место» объединенного объекта = позиция последнего вхождения пользователя
   sessionsProcessed.reverse()
 
   const optionEquipments = new Set(options?.equipment) // O(1) поиск по запрошенному оборудованию
@@ -80,3 +80,63 @@ export default function selectData(sessions: Array<Session>, options?: Options):
 
   return results
 }
+
+const SESSIONS: Array<Session> = [
+  { user: 8, duration: 50, equipment: ['bench'] },
+  { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
+  { user: 1, duration: 10, equipment: ['barbell'] },
+  { user: 7, duration: 100, equipment: ['bike', 'kettlebell'] },
+  { user: 7, duration: 200, equipment: ['bike'] },
+  { user: 2, duration: 200, equipment: ['treadmill'] },
+  { user: 2, duration: 200, equipment: ['bike'] },
+]
+
+selectData(SESSIONS);
+// [
+//   { user: 8, duration: 50, equipment: ['bench'] },
+//   { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
+//   { user: 1, duration: 10, equipment: ['barbell'] },
+//   { user: 7, duration: 100, equipment: ['bike', 'kettlebell'] },
+//   { user: 7, duration: 200, equipment: ['bike'] },
+//   { user: 2, duration: 200, equipment: ['treadmill'] },
+//   { user: 2, duration: 200, equipment: ['bike'] },
+// ];
+
+selectData(SESSIONS, { user: 2 });
+// [
+//   { user: 2, duration: 200, equipment: ['treadmill'] },
+//   { user: 2, duration: 200, equipment: ['bike'] },
+// ];
+
+selectData(SESSIONS, { minDuration: 200 });
+// [
+//   { user: 7, duration: 200, equipment: ['bike'] },
+//   { user: 2, duration: 200, equipment: ['treadmill'] },
+//   { user: 2, duration: 200, equipment: ['bike'] },
+// ];
+
+selectData(SESSIONS, { minDuration: 400 });
+// [];
+
+selectData(SESSIONS, { equipment: ['bike', 'dumbbell'] });
+// [
+//   { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
+//   { user: 7, duration: 100, equipment: ['bike', 'kettlebell'] },
+//   { user: 7, duration: 200, equipment: ['bike'] },
+//   { user: 2, duration: 200, equipment: ['bike'] },
+// ];
+
+selectData(SESSIONS, { merge: true });
+// [
+//   { user: 8, duration: 50, equipment: ['bench'] },
+//   { user: 1, duration: 10, equipment: ['barbell'] },
+//   { user: 7, duration: 450, equipment: ['bike', 'dumbbell', 'kettlebell'] },
+//   { user: 2, duration: 400, equipment: ['bike', 'treadmill'] },
+// ];
+
+selectData(SESSIONS, { merge: true, minDuration: 400 });
+// [
+//   { user: 7, duration: 450, equipment: ['bike', 'dumbbell', 'kettlebell'] },
+//   { user: 2, duration: 400, equipment: ['bike', 'treadmill'] },
+// ];
+
