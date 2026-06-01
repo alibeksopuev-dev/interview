@@ -106,6 +106,31 @@ function curry(func: Function): Function {
 
 ---
 
+Имя curried нужно только для рекурсии внутри самой функции.
+
+```typescript
+// С именем — можно вызвать curried рекурсивно внутри
+return function curried(...args) {
+  if (args.length >= func.length) return func(...args)
+  return (...more) => curried(...args, ...more)  // ← вот зачем имя
+}
+
+// Без имени — нельзя обратиться к себе
+return function(...args) {
+  if (args.length >= func.length) return func(...args)
+  return (...more) => ???(...args, ...more)  // как вызвать себя?
+}
+```
+Если реализация без рекурсии (как у тебя через замыкание с накоплением args) — имя не нужно. Если с рекурсией — имя обязательно, либо используй отдельную переменную:
+
+```typescript
+function curry(func) {
+  const curried = (...args) => 
+    args.length >= func.length ? func(...args) : (...more) => curried(...args, ...more)
+  return curried
+}
+```
+
 ## 📐 Итоговая карточка
 
 ```
@@ -212,8 +237,71 @@ function curry<T extends (...args: any[]) => any>(func: T) {
   }
 }
 ```
-
 Аналог `bind`-версии, но с явным управлением накоплением через `...moreArgs`.
+
+moreArgs — это новые аргументы, которые придут при следующем вызове каррированной функции.
+
+Пример по шагам:
+
+```typescript
+const add = (a, b, c) => a + b + c
+const curriedAdd = curry(add)
+
+curriedAdd(1)    // args = [1],    не хватает → возвращает новую функцию
+  (2)            // moreArgs = [2], args = [1], итого [...args, ...moreArgs] = [1, 2], не хватает → ещё функция
+  (3)            // moreArgs = [3], args = [1, 2], итого [1, 2, 3] → вызываем func
+```
+Каждый раз когда ты вызываешь промежуточную функцию — туда попадают moreArgs. Предыдущие аргументы живут в args через замыкание. Новая функция — потому что каждый частичный вызов возвращает новую функцию с накопленными аргументами [...args, ...moreArgs].
+
+---
+
+### 🔍 Трассировка: curryWithBind vs curry (spread)
+
+```typescript
+function sum(a, b, c) { return a + b + c } // arity = 3
+```
+
+#### `curryWithBind`
+
+**Шаг 1:** `const step1 = curryWithBind(sum)(1)`
+- **args:** `[1]`
+- **Проверка:** `1 >= 3`? Нет.
+- **Результат:** `curried.bind(this, 1)` — `1` вшит в новую функцию
+
+**Шаг 2:** `const step2 = step1(2)`
+- **args:** `[1, 2]` — `bind` автоматически prepend-ит `1`
+- **Проверка:** `2 >= 3`? Нет.
+- **Результат:** `curried.bind(this, 1, 2)`
+
+**Шаг 3:** `const result = step2(3)`
+- **args:** `[1, 2, 3]` — `bind` prepend-ит `1, 2`
+- **Проверка:** `3 >= 3`? Да.
+- **Результат:** `func.apply(this, [1, 2, 3])` → `6`
+
+---
+
+#### `curry` (через замыкание + `...moreArgs`)
+
+**Шаг 1:** `const step1 = curry(sum)(1)`
+- **args (замыкание):** `[1]`
+- **Проверка:** `1 >= 3`? Нет.
+- **Результат:** анонимная функция с `args = [1]` в замыкании
+
+**Шаг 2:** `const step2 = step1(2)`
+- **moreArgs:** `[2]`
+- **Вызов:** `curried.apply(this, [...[1], ...[2]])` → `curried(1, 2)`
+- **args (новое замыкание):** `[1, 2]`
+- **Проверка:** `2 >= 3`? Нет.
+- **Результат:** новая анонимная функция с `args = [1, 2]`
+
+**Шаг 3:** `const result = step2(3)`
+- **moreArgs:** `[3]`
+- **Вызов:** `curried.apply(this, [...[1, 2], ...[3]])` → `curried(1, 2, 3)`
+- **args:** `[1, 2, 3]`
+- **Проверка:** `3 >= 3`? Да.
+- **Результат:** `func.apply(this, [1, 2, 3])` → `6`
+
+**Ключевое отличие:** `bind` накапливает аргументы встроенным механизмом JS, замыкание накапливает вручную через `[...args, ...moreArgs]` и рекурсивный вызов `curried`.
 
 ---
 
