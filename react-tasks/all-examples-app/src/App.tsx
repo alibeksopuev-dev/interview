@@ -13,7 +13,8 @@ const usersColumns: Columns<User> = [
     label: 'ID',
     key: 'id',
     renderCell: (user: User) => user.id,
-    comparator: (a: User, b: User, sortDirection) => (sortDirection === 'asc' ? a.id - b.id : b.id - a.id),
+    comparator: (a: User, b: User, sortDirection) =>
+      sortDirection === 'asc' ? a.id - b.id : b.id - a.id,
   },
   {
     label: 'Name',
@@ -26,14 +27,17 @@ const usersColumns: Columns<User> = [
     label: 'Age',
     key: 'age',
     renderCell: (user: User) => `${user.age} years`,
-    comparator: (a: User, b: User, sortDirection) => (sortDirection === 'asc' ? a.age - b.age : b.age - a.age),
+    comparator: (a: User, b: User, sortDirection) =>
+      sortDirection === 'asc' ? a.age - b.age : b.age - a.age,
   },
   {
     label: 'Occupation',
     key: 'occupation',
     renderCell: (user: User) => user.occupation,
     comparator: (a: User, b: User, sortDirection) =>
-      sortDirection === 'asc' ? a.occupation.localeCompare(b.occupation) : b.occupation.localeCompare(a.occupation),
+      sortDirection === 'asc'
+        ? a.occupation.localeCompare(b.occupation)
+        : b.occupation.localeCompare(a.occupation),
   },
 ]
 
@@ -42,7 +46,8 @@ const housesColumns: Columns<House> = [
     label: 'ID',
     key: 'id',
     renderCell: (house: House) => house.id,
-    comparator: (a: House, b: House, sortDirection) => (sortDirection === 'asc' ? a.id - b.id : b.id - a.id),
+    comparator: (a: House, b: House, sortDirection) =>
+      sortDirection === 'asc' ? a.id - b.id : b.id - a.id,
   },
   {
     label: 'Street',
@@ -84,18 +89,24 @@ const housesColumns: Columns<House> = [
 function DataTablePage() {
   return (
     <div className='page-content'>
-      <DataTable data={users} columns={usersColumns} />
+      <DataTable
+        data={users}
+        columns={usersColumns}
+      />
       <div style={{ marginTop: 32 }}>
-        <DataTable data={houses} columns={housesColumns} />
+        <DataTable
+          data={houses}
+          columns={housesColumns}
+        />
       </div>
     </div>
   )
 }
 
 const NAV_ITEMS = [
-  { to: '/data-table', label: 'DataTable',  badge: 'Generic' },
-  { to: '/throttle',   label: 'Throttle',   badge: 'Hook'    },
-  { to: '/use-query',  label: 'useQuery',   badge: 'Hook'    },
+  { to: '/data-table', label: 'DataTable', badge: 'Generic' },
+  { to: '/throttle', label: 'Throttle', badge: 'Hook' },
+  { to: '/use-query', label: 'useQuery', badge: 'Hook' },
 ]
 
 export default function App() {
@@ -119,10 +130,35 @@ export default function App() {
 
       <main className='app-main'>
         <Routes>
-          <Route path='/' element={<Navigate to='/data-table' replace />} />
-          <Route path='/data-table' element={<DataTablePage />} />
-          <Route path='/throttle'   element={<div className='page-content'><ThrottleShowcase /></div>} />
-          <Route path='/use-query'  element={<div className='page-content'><UseQueryShowcase /></div>} />
+          <Route
+            path='/'
+            element={
+              <Navigate
+                to='/data-table'
+                replace
+              />
+            }
+          />
+          <Route
+            path='/data-table'
+            element={<DataTablePage />}
+          />
+          <Route
+            path='/throttle'
+            element={
+              <div className='page-content'>
+                <ThrottleShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/use-query'
+            element={
+              <div className='page-content'>
+                <UseQueryShowcase />
+              </div>
+            }
+          />
         </Routes>
       </main>
     </div>
