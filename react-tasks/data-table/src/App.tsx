@@ -1,7 +1,9 @@
+import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import DataTable, { Columns } from './DataTableGeneric.tsx'
 import users from './data/users.ts'
 import houses from './data/houses.ts'
 import { ThrottleShowcase } from './ThrottleExamples.tsx'
+import { UseQueryShowcase } from './UseQueryShowcase.tsx'
 
 type User = (typeof users)[number]
 type House = (typeof houses)[number]
@@ -79,20 +81,50 @@ const housesColumns: Columns<House> = [
   },
 ]
 
+function DataTablePage() {
+  return (
+    <div className='page-content'>
+      <DataTable data={users} columns={usersColumns} />
+      <div style={{ marginTop: 32 }}>
+        <DataTable data={houses} columns={housesColumns} />
+      </div>
+    </div>
+  )
+}
+
+const NAV_ITEMS = [
+  { to: '/data-table', label: 'DataTable',  badge: 'Generic' },
+  { to: '/throttle',   label: 'Throttle',   badge: 'Hook'    },
+  { to: '/use-query',  label: 'useQuery',   badge: 'Hook'    },
+]
+
 export default function App() {
   return (
-    <div>
-      <DataTable
-        data={users}
-        columns={usersColumns}
-      />
-      <hr />
-      <DataTable
-        data={houses}
-        columns={housesColumns}
-      />
-      <hr />
-      <ThrottleShowcase />
+    <div className='app-layout'>
+      <aside className='app-sidebar'>
+        <div className='sidebar-logo'>Interview</div>
+        <nav className='sidebar-nav'>
+          {NAV_ITEMS.map(({ to, label, badge }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `sidebar-link${isActive ? ' sidebar-link-active' : ''}`}
+            >
+              <span className='sidebar-link-label'>{label}</span>
+              <span className='sidebar-link-badge'>{badge}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+
+      <main className='app-main'>
+        <Routes>
+          <Route path='/' element={<Navigate to='/data-table' replace />} />
+          <Route path='/data-table' element={<DataTablePage />} />
+          <Route path='/throttle'   element={<div className='page-content'><ThrottleShowcase /></div>} />
+          <Route path='/use-query'  element={<div className='page-content'><UseQueryShowcase /></div>} />
+        </Routes>
+      </main>
     </div>
   )
 }
