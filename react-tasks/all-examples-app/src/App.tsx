@@ -4,6 +4,7 @@ import users from './data/users.ts'
 import houses from './data/houses.ts'
 import { ThrottleShowcase } from './ThrottleExamples.tsx'
 import { UseQueryShowcase } from './UseQueryShowcase.tsx'
+import { SelectDataShowcase } from './SelectDataShowcase.tsx'
 
 type User = (typeof users)[number]
 type House = (typeof houses)[number]
@@ -107,6 +108,7 @@ const NAV_ITEMS = [
   { to: '/data-table', label: 'DataTable', badge: 'Generic' },
   { to: '/throttle', label: 'Throttle', badge: 'Hook' },
   { to: '/use-query', label: 'useQuery', badge: 'Hook' },
+  { to: '/select-data', label: 'selectData', badge: 'Filter' },
 ]
 
 export default function App() {
@@ -158,6 +160,10 @@ export default function App() {
                 <UseQueryShowcase />
               </div>
             }
+          />
+          <Route
+            path='/select-data'
+            element={<SelectDataShowcase />}
           />
         </Routes>
       </main>

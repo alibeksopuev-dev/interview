@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// @ts-ignore
 const react_1 = require("react");
 function useQuery(fn, deps = []) {
     const [state, setState] = (0, react_1.useState)({ status: 'loading' });
@@ -8,12 +9,12 @@ function useQuery(fn, deps = []) {
         let ignore = false;
         setState({ status: 'loading' });
         fn()
-            .then((data) => {
+            .then(data => {
             if (ignore)
                 return;
             setState({ status: 'success', data });
         })
-            .catch((error) => {
+            .catch(error => {
             if (ignore)
                 return;
             setState({ status: 'error', error });

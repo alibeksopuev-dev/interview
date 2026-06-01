@@ -1,3 +1,4 @@
+// @ts-ignore
 import { DependencyList, useEffect, useState } from 'react'
 
 // Дискриминированный union — статус однозначно определяет доступные поля
@@ -19,11 +20,11 @@ export default function useQuery<T>(
     setState({ status: 'loading' })
 
     fn()
-      .then((data) => {
+      .then(data => {
         if (ignore) return
         setState({ status: 'success', data })
       })
-      .catch((error) => {
+      .catch(error => {
         if (ignore) return
         setState({ status: 'error', error })
       })
