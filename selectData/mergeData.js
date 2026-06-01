@@ -1,30 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const SESSIONS = [
+    { user: 8, duration: 50, equipment: ['bench'] },
+    { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
+    { user: 1, duration: 10, equipment: ['barbell'] },
+    { user: 7, duration: 100, equipment: ['bike', 'kettlebell'] },
+    { user: 7, duration: 200, equipment: ['bike'] },
+    { user: 2, duration: 200, equipment: ['treadmill'] },
+    { user: 2, duration: 200, equipment: ['bike'] },
+];
+console.log(mergeData(SESSIONS));
 function mergeData(sessions) {
-    // Внутреннее представление: equipment как Set для O(1) дедупликации при слиянии
-    const results = [];
-    // Map: userId → ссылка на тот же объект, что уже лежит в results
-    // Благодаря этому обновление Map = обновление объекта в results (O(1))
+    // Map сохраняет порядок вставки по спецификации JS (ES2015+):
+    // Map.values() итерируется в порядке первой вставки ключа —
+    // что совпадает с требованием «позиция первого вхождения пользователя»
     const sessionsForUser = new Map();
     sessions.forEach(session => {
         if (sessionsForUser.has(session.user)) {
-            // Пользователь уже есть — обновляем его мёрдженный объект
             const userSession = sessionsForUser.get(session.user);
             userSession.duration += session.duration;
             session.equipment.forEach(eq => userSession.equipment.add(eq));
         }
         else {
-            // Первое вхождение пользователя — клонируем и сохраняем позицию
-            const clonedSession = {
+            sessionsForUser.set(session.user, {
                 ...session,
                 equipment: new Set(session.equipment), // не мутируем входные данные
-            };
-            sessionsForUser.set(session.user, clonedSession);
-            results.push(clonedSession); // место = первое вхождение
+            });
         }
     });
-    // Конвертируем Set обратно в отсортированный массив (публичный контракт)
-    return results.map(session => ({
+    // Map.values() даёт значения в порядке первой вставки — отдельный results не нужен
+    return Array.from(sessionsForUser.values()).map(session => ({
         ...session,
         equipment: Array.from(session.equipment).sort(),
     }));

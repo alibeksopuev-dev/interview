@@ -65,7 +65,7 @@ function selectData(sessions: Array<Session>, options?: Options): Array<Session>
 // ─── mergeData implementation ──────────────────────────────────────────────
 
 function mergeData(sessions: Array<Session>): Array<Session> {
-  const results: Array<{ user: number; duration: number; equipment: Set<string> }> = []
+  // Map сохраняет порядок первой вставки — Map.values() даёт нужный порядок без отдельного results
   const sessionsForUser = new Map<
     number,
     { user: number; duration: number; equipment: Set<string> }
@@ -77,13 +77,14 @@ function mergeData(sessions: Array<Session>): Array<Session> {
       userSession.duration += session.duration
       session.equipment.forEach(eq => userSession.equipment.add(eq))
     } else {
-      const clonedSession = { ...session, equipment: new Set(session.equipment) }
-      sessionsForUser.set(session.user, clonedSession)
-      results.push(clonedSession)
+      sessionsForUser.set(session.user, {
+        ...session,
+        equipment: new Set(session.equipment),
+      })
     }
   })
 
-  return results.map(session => ({
+  return Array.from(sessionsForUser.values()).map(session => ({
     ...session,
     equipment: Array.from(session.equipment).sort(),
   }))

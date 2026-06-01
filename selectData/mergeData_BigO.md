@@ -22,8 +22,8 @@
 
 | Концепция | Роль в mergeData |
 | --- | --- |
-| **`Map<userId, mergedRow>`** | Хранит ссылку на объект в `results` — `O(1)` доступ при повторном вхождении |
-| **Shared reference** | Map и `results` ссылаются на **один и тот же** объект → обновление Map = обновление `results` |
+| **`Map<userId, mergedRow>`** | `O(1)` доступ к мёрдженному объекту при повторном вхождении |
+| **Map insertion order** | `Map` по спецификации JS (ES2015+) итерируется в порядке первой вставки ключа → `Map.values()` уже в нужном порядке, отдельный `results[]` не нужен |
 | **`Set<string>` для equipment** | `O(1)` добавление с автоматической дедупликацией |
 | **`Array.sort()` в конце** | Конвертация `Set → Array` и сортировка — один раз на пользователя, не на каждое вхождение |
 
@@ -38,10 +38,10 @@
            userSession.duration += session.duration
            для каждого equipment → userSession.equipment.add(eq)
       НЕТ → клонируем сессию (equipment: new Set(...))
-             Map[user] = клон
-             results.push(клон)   ← место = первое вхождение
+             Map[user] = клон   ← место = первое вхождение (Map хранит insertion order)
 
-return results.map(session => ({
+// Map.values() итерируется в порядке первой вставки — отдельный results[] не нужен
+return Array.from(sessionsForUser.values()).map(session => ({
   ...session,
   equipment: Array.from(session.equipment).sort()
 }))
@@ -49,38 +49,74 @@ return results.map(session => ({
 
 ---
 
-## Почему Shared Reference работает
+## Почему Map.values() достаточно — insertion order
+
+Спецификация ECMAScript (ES2015+) гарантирует: `Map` итерируется в порядке **первой вставки** каждого ключа. Повторный `set()` с тем же ключом **не меняет его позицию** в порядке итерации — только обновляет значение.
 
 ```ts
-const clonedSession = {
-  ...session,
-  equipment: new Set(session.equipment),
-}
+const map = new Map<number, string>()
+map.set(7, 'first')
+map.set(1, 'second')
+map.set(7, 'updated')  // позиция ключа 7 НЕ изменилась
 
-sessionsForUser.set(session.user, clonedSession) // ← Map хранит ссылку
-results.push(clonedSession)                       // ← results хранит ту же ссылку
+Array.from(map.values()) // → ['updated', 'second']
+//                                ↑ ключ 7 всё ещё первый
 ```
 
+Значит `Array.from(sessionsForUser.values())` даёт строки в порядке первого вхождения каждого пользователя — именно то, что требует задача. Отдельный `results[]` был бы дублированием того, что Map уже делает бесплатно.
+
 ```
-           память
-           ┌──────────────────────────────┐
-           │  { user: 7, duration: 150,   │
-           │    equipment: Set{...} }     │
-           └──────────────┬───────────────┘
-                          │
-          ┌───────────────┴──────────────┐
-          ↓                              ↓
-  Map[7] = (ссылка)          results[1] = (та же ссылка)
+sessionsForUser после обхода всех 7 сессий:
+
+  Map {
+    8 → { user: 8, duration: 50,  equipment: Set{bench} }       ← вставлен при i=0
+    7 → { user: 7, duration: 450, equipment: Set{dumbbell,...} } ← вставлен при i=1
+    1 → { user: 1, duration: 10,  equipment: Set{barbell} }      ← вставлен при i=2
+    2 → { user: 2, duration: 400, equipment: Set{treadmill,...} } ← вставлен при i=5
+  }
+
+Array.from(sessionsForUser.values())
+// → [user8, user7, user1, user2]  — порядок первых вхождений ✅
 ```
 
-Когда позже встречаем `user=7` снова:
+---
+
+## Рефакторинг: от двух структур к одной
+
+### Было — shared reference trick
+
+Первая версия держала два синхронизированных контейнера:
+
 ```ts
-const userSession = sessionsForUser.get(session.user)! // та же ссылка
-userSession.duration += session.duration               // обновляем объект
-// results[1].duration автоматически обновился — это один объект!
+const results = []          // для порядка (insertion order вручную)
+const sessionsForUser = new Map() // для O(1) доступа по userId
+
+// При первом вхождении:
+sessionsForUser.set(session.user, clonedSession)
+results.push(clonedSession) // оба указывают на один объект
 ```
 
-Никакого поиска по `results` не нужно — `Map` играет роль индекса.
+Идея: `Map` и `results[]` хранят **одну ссылку** на объект — обновление через `Map` автоматически отражалось в `results[]`. Это работает, но `results[]` избыточен.
+
+### Стало — Map insertion order
+
+`Map` по спецификации ES2015+ сам хранит insertion order. Повторный `set()` с тем же ключом **не меняет позицию** ключа — только обновляет значение:
+
+```ts
+const map = new Map()
+map.set(7, 'first')
+map.set(1, 'second')
+map.set(7, 'updated')       // ← позиция ключа 7 не изменилась
+
+Array.from(map.values())    // → ['updated', 'second']
+```
+
+Значит `results[]` дублировал то, что `Map` уже делает бесплатно. Финальная версия:
+
+```ts
+// Map.values() даёт значения в порядке первой вставки — results[] не нужен
+return Array.from(sessionsForUser.values()).map(...)
+```
 
 ---
 
@@ -88,14 +124,8 @@ userSession.duration += session.duration               // обновляем о�
 
 ```ts
 export default function mergeData(sessions: Array<Session>): Array<Session> {
-  // Внутреннее представление: equipment как Set (O(1) add, авто-дедупликация)
-  const results: Array<{
-    user: number
-    duration: number
-    equipment: Set<string>
-  }> = []
-
-  // userId → ссылка на тот же объект, что лежит в results[i]
+  // Map сохраняет порядок первой вставки по спецификации ES2015+:
+  // Map.values() итерируется в порядке первого появления каждого userId
   const sessionsForUser = new Map<
     number,
     { user: number; duration: number; equipment: Set<string> }
@@ -105,21 +135,21 @@ export default function mergeData(sessions: Array<Session>): Array<Session> {
     if (sessionsForUser.has(session.user)) {
       // O(1): получаем мёрдженный объект по userId
       const userSession = sessionsForUser.get(session.user)!
-      userSession.duration += session.duration              // суммируем duration
-      session.equipment.forEach(eq => userSession.equipment.add(eq)) // union equipment
+      userSession.duration += session.duration
+      session.equipment.forEach(eq => userSession.equipment.add(eq))
       // ↑ Set.add игнорирует дублирующиеся значения автоматически
     } else {
-      const clonedSession = {
+      // Первое вхождение: клонируем и регистрируем в Map
+      // Позиция в Map фиксируется здесь навсегда (insertion order)
+      sessionsForUser.set(session.user, {
         ...session,
-        equipment: new Set(session.equipment), // ← не мутируем входной массив
-      }
-      sessionsForUser.set(session.user, clonedSession) // регистрируем в индексе
-      results.push(clonedSession)                       // фиксируем позицию (первое вхождение)
+        equipment: new Set(session.equipment), // не мутируем входные данные
+      })
     }
   })
 
-  // Конвертируем Set → отсортированный Array (публичный контракт функции)
-  return results.map(session => ({
+  // Map.values() в порядке первой вставки → конвертируем Set в отсортированный Array
+  return Array.from(sessionsForUser.values()).map(session => ({
     ...session,
     equipment: Array.from(session.equipment).sort(),
   }))
