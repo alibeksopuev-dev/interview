@@ -5,6 +5,7 @@ import houses from './data/houses.ts'
 import { ThrottleShowcase } from './ThrottleExamples.tsx'
 import { UseQueryShowcase } from './UseQueryShowcase.tsx'
 import { SelectDataShowcase } from './SelectDataShowcase.tsx'
+import { EventLoopShowcase } from './EventLoopShowcase.tsx'
 
 type User = (typeof users)[number]
 type House = (typeof houses)[number]
@@ -109,6 +110,7 @@ const NAV_ITEMS = [
   { to: '/throttle', label: 'Throttle', badge: 'Hook' },
   { to: '/use-query', label: 'useQuery', badge: 'Hook' },
   { to: '/select-data', label: 'selectData', badge: 'Filter' },
+  { to: '/event-loop', label: 'Event Loop', badge: 'Simulator' },
 ]
 
 export default function App() {
@@ -164,6 +166,14 @@ export default function App() {
           <Route
             path='/select-data'
             element={<SelectDataShowcase />}
+          />
+          <Route
+            path='/event-loop'
+            element={
+              <div className='page-content'>
+                <EventLoopShowcase />
+              </div>
+            }
           />
         </Routes>
       </main>
