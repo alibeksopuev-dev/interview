@@ -1,4 +1,5 @@
 type Session = { user: number; duration: number; equipment: Array<string> }
+type SessionWithSet = { user: number; duration: number; equipment: Set<string> }
 type Options = {
   user?: number
   minDuration?: number
@@ -42,7 +43,7 @@ export default function selectData(sessions: Array<Session>, options?: Options):
   return []
 }
 
-selectData(SESSIONS);
+selectData(SESSIONS)
 // [
 //   { user: 8, duration: 50, equipment: ['bench'] },
 //   { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
@@ -52,34 +53,34 @@ selectData(SESSIONS);
 //   { user: 2, duration: 200, equipment: ['treadmill'] },
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
-selectData(SESSIONS, { user: 2 });
+selectData(SESSIONS, { user: 2 })
 // [
 //   { user: 2, duration: 200, equipment: ['treadmill'] },
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
-selectData(SESSIONS, { minDuration: 200 });
+selectData(SESSIONS, { minDuration: 200 })
 // [
 //   { user: 7, duration: 200, equipment: ['bike'] },
 //   { user: 2, duration: 200, equipment: ['treadmill'] },
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
-selectData(SESSIONS, { minDuration: 400 });
+selectData(SESSIONS, { minDuration: 400 })
 // [];
-selectData(SESSIONS, { equipment: ['bike', 'dumbbell'] });
+selectData(SESSIONS, { equipment: ['bike', 'dumbbell'] })
 // [
 //   { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
 //   { user: 7, duration: 100, equipment: ['bike', 'kettlebell'] },
 //   { user: 7, duration: 200, equipment: ['bike'] },
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
-selectData(SESSIONS, { merge: true });
+selectData(SESSIONS, { merge: true })
 // [
 //   { user: 8, duration: 50, equipment: ['bench'] },
 //   { user: 1, duration: 10, equipment: ['barbell'] },
 //   { user: 7, duration: 450, equipment: ['bike', 'dumbbell', 'kettlebell'] },
 //   { user: 2, duration: 400, equipment: ['bike', 'treadmill'] },
 // ];
-selectData(SESSIONS, { merge: true, minDuration: 400 });
+selectData(SESSIONS, { merge: true, minDuration: 400 })
 // [
 //   { user: 7, duration: 450, equipment: ['bike', 'dumbbell', 'kettlebell'] },
 //   { user: 2, duration: 400, equipment: ['bike', 'treadmill'] },

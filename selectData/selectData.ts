@@ -35,8 +35,11 @@ export default function selectData(sessions: Array<Session>, options?: Options):
 
   reversedSessions.forEach(session => {
     if (options?.merge && sessionsForUser.has(session.user)) {
-      // Пользователь уже встречался — обновляем существующий объединенный объект
+      // Пользователь уже встречался — обновляем существующий объединенный объект по ссылке.
+      // Поскольку это ссылка на тот же объект, который лежит в sessionsProcessed,
+      // изменения автоматически отразятся и внутри массива sessionsProcessed.
       const userSession = sessionsForUser.get(session.user)!
+      // Поскольку это ссылка, изменения автоматически отражаются внутри массива sessionsProcessed.
       userSession.duration += session.duration
       session.equipment.forEach(e => userSession.equipment.add(e))
     } else {
@@ -47,12 +50,33 @@ export default function selectData(sessions: Array<Session>, options?: Options):
       }
 
       if (options?.merge) {
-        sessionsForUser.set(session.user, clonedSession)
+        // Сохраняем ссылку на созданный объект-клон в Map для быстрого доступа при слиянии
+        sessionsForUser.set(session.user, clonedSession) // ← Запись ссылки в Map
       }
 
-      sessionsProcessed.push(clonedSession)
+      // Сохраняем ТУ ЖЕ САМУЮ ссылку на объект-клон в рабочий массив
+      sessionsProcessed.push(clonedSession) // ← Запись той же ссылки в Array
     }
   })
+
+  // В JavaScript и TypeScript все объекты являются ссылочными типами данных.
+  // Когда мы работаем с объектами, переменные хранят не сами данные объекта,
+  // а адрес (ссылку) на место в куче (heap) памяти, где этот объект лежит.
+
+  // Строка 48: Инструкция { ... } выделяет новую ячейку памяти в куче для объекта.
+  // Переменная clonedSession получает ссылку на эту ячейку.
+  // Строка 54: Метод Map.prototype.set берет ту же самую ссылку и связывает её с ID пользователя в карте sessionsForUser.
+  // Строка 58: Метод Array.prototype.push берет эту же самую ссылку и помещает её в массив sessionsProcessed.
+
+  // Итог:
+  // У нас создается ровно один объект в памяти, но теперь на него указывают сразу три места:
+  // - Переменная clonedSession (пока выполняется текущая итерация цикла).
+  // - Запись в карте sessionsForUser (для быстрого поиска за $O(1)$ на будущих итерациях).
+  // - Элемент внутри массива sessionsProcessed.
+
+  // Именно благодаря этому, когда на следующих итерациях мы достаем ссылку из Map и меняем объект,
+  // эти изменения мгновенно видны и внутри массива sessionsProcessed,
+  // ведь они ссылаются на один и тот же участок памяти!
 
   // Восстанавливаем оригинальный порядок:
   // при merge — «место» объединенного объекта = позиция последнего вхождения пользователя
@@ -91,7 +115,7 @@ const SESSIONS: Array<Session> = [
   { user: 2, duration: 200, equipment: ['bike'] },
 ]
 
-selectData(SESSIONS);
+selectData(SESSIONS)
 // [
 //   { user: 8, duration: 50, equipment: ['bench'] },
 //   { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
@@ -102,23 +126,23 @@ selectData(SESSIONS);
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
 
-selectData(SESSIONS, { user: 2 });
+selectData(SESSIONS, { user: 2 })
 // [
 //   { user: 2, duration: 200, equipment: ['treadmill'] },
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
 
-selectData(SESSIONS, { minDuration: 200 });
+selectData(SESSIONS, { minDuration: 200 })
 // [
 //   { user: 7, duration: 200, equipment: ['bike'] },
 //   { user: 2, duration: 200, equipment: ['treadmill'] },
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
 
-selectData(SESSIONS, { minDuration: 400 });
+selectData(SESSIONS, { minDuration: 400 })
 // [];
 
-selectData(SESSIONS, { equipment: ['bike', 'dumbbell'] });
+selectData(SESSIONS, { equipment: ['bike', 'dumbbell'] })
 // [
 //   { user: 7, duration: 150, equipment: ['dumbbell', 'kettlebell'] },
 //   { user: 7, duration: 100, equipment: ['bike', 'kettlebell'] },
@@ -126,7 +150,7 @@ selectData(SESSIONS, { equipment: ['bike', 'dumbbell'] });
 //   { user: 2, duration: 200, equipment: ['bike'] },
 // ];
 
-selectData(SESSIONS, { merge: true });
+selectData(SESSIONS, { merge: true })
 // [
 //   { user: 8, duration: 50, equipment: ['bench'] },
 //   { user: 1, duration: 10, equipment: ['barbell'] },
@@ -134,9 +158,8 @@ selectData(SESSIONS, { merge: true });
 //   { user: 2, duration: 400, equipment: ['bike', 'treadmill'] },
 // ];
 
-selectData(SESSIONS, { merge: true, minDuration: 400 });
+selectData(SESSIONS, { merge: true, minDuration: 400 })
 // [
 //   { user: 7, duration: 450, equipment: ['bike', 'dumbbell', 'kettlebell'] },
 //   { user: 2, duration: 400, equipment: ['bike', 'treadmill'] },
 // ];
-
