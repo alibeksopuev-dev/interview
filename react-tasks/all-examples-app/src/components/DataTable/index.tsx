@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { InputField } from '../InputField'
+import './styles.css'
 
 type SortDirection = 'asc' | 'desc'
 
