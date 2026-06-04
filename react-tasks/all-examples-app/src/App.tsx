@@ -8,6 +8,7 @@ import { SelectDataShowcase } from './SelectDataShowcase.tsx'
 import { EventLoopShowcase } from './EventLoopShowcase.tsx'
 import { ObserversShowcase } from './ObserversShowcase.tsx'
 import { BrowserMetricsShowcase } from './BrowserMetricsShowcase.tsx'
+import { GraphicsShowcase } from './GraphicsShowcase.tsx'
 
 type User = (typeof users)[number]
 type House = (typeof houses)[number]
@@ -115,6 +116,7 @@ const NAV_ITEMS = [
   { to: '/event-loop', label: 'Event Loop', badge: 'Simulator' },
   { to: '/observers', label: 'Observers', badge: 'DOM' },
   { to: '/browser-metrics', label: 'Browser Metrics', badge: 'Coords' },
+  { to: '/graphics', label: 'Graphics', badge: 'Canvas' },
 ]
 
 export default function App() {
@@ -192,6 +194,14 @@ export default function App() {
             element={
               <div className='page-content'>
                 <BrowserMetricsShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/graphics'
+            element={
+              <div className='page-content'>
+                <GraphicsShowcase />
               </div>
             }
           />

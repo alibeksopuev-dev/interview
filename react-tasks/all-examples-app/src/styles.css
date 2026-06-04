@@ -3446,3 +3446,76 @@ th button {
   color: #94a3b8;
   margin-top: 4px;
 }
+
+/* ─── Graphics showcase (Canvas / Pixi / WebGL / Three.js) ──────────────── */
+
+.gfx-canvas {
+  display: block;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  max-width: 100%;
+  height: auto;
+  touch-action: none;
+}
+
+.gfx-canvas-paint {
+  cursor: crosshair;
+  background:
+    linear-gradient(45deg, #f8fafc 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, #f8fafc 25%, transparent 25%) 0 8px / 16px 16px,
+    linear-gradient(45deg, transparent 75%, #f8fafc 75%) 8px -8px / 16px 16px,
+    linear-gradient(-45deg, transparent 75%, #f8fafc 75%) 8px 0 / 16px 16px,
+    #ffffff;
+}
+
+.gfx-pixi-container {
+  display: flex;
+  justify-content: center;
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 4px;
+  overflow: hidden;
+}
+
+.gfx-pixi-container canvas {
+  display: block;
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.gfx-three-container {
+  width: 100%;
+  min-height: 320px;
+  background: #f0f9ff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.gfx-three-container canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.gfx-three-dark {
+  background: #0f172a;
+  border-color: #1e293b;
+  cursor: grab;
+}
+
+.gfx-three-dark:active {
+  cursor: grabbing;
+}
+
+.gfx-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
