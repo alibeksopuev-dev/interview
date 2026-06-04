@@ -431,16 +431,24 @@ function DragDropDemo() {
   // чтобы при перетаскивании курсор не "прыгал" в левый верх.
   const dragOffsetRef = useRef({ dx: 0, dy: 0 })
 
+  const [pointerCoords, setPointerCoords] = useState<{ clientX: number; clientY: number } | null>(null)
+  const [stageRectCoords, setStageRectCoords] = useState<{ left: number; top: number } | null>(null)
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>, item: DragItem) => {
     const target = e.currentTarget
     const rect = target.getBoundingClientRect()
     // dx, dy — где внутри элемента нажал пользователь
     dragOffsetRef.current = {
-      dx: e.clientX - rect.left,
-      dy: e.clientY - rect.top,
+      dx: Math.round(e.clientX - rect.left),
+      dy: Math.round(e.clientY - rect.top),
     }
     target.setPointerCapture(e.pointerId) // ловим pointer — больше не отпустим до pointerup
     setDraggingId(item.id)
+    setPointerCoords({ clientX: Math.round(e.clientX), clientY: Math.round(e.clientY) })
+    if (stageRef.current) {
+      const sRect = stageRef.current.getBoundingClientRect()
+      setStageRectCoords({ left: Math.round(sRect.left), top: Math.round(sRect.top) })
+    }
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -459,6 +467,8 @@ function DragDropDemo() {
     y = Math.max(0, Math.min(stageRect.height - 60, y))
 
     setItems(prev => prev.map(it => (it.id === draggingId ? { ...it, x, y } : it)))
+    setPointerCoords({ clientX: Math.round(e.clientX), clientY: Math.round(e.clientY) })
+    setStageRectCoords({ left: Math.round(stageRect.left), top: Math.round(stageRect.top) })
   }
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -466,6 +476,8 @@ function DragDropDemo() {
       e.currentTarget.releasePointerCapture(e.pointerId)
     }
     setDraggingId(null)
+    setPointerCoords(null)
+    setStageRectCoords(null)
   }
 
   const reset = () => setItems(INITIAL_ITEMS)
@@ -493,36 +505,111 @@ function DragDropDemo() {
         </span>
       </div>
 
-      <div
-        ref={stageRef}
-        className='bm-drag-stage'
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      >
-        {items.map(item => (
-          <div
-            key={item.id}
-            className='bm-drag-item'
-            onPointerDown={e => handlePointerDown(e, item)}
-            onPointerUp={handlePointerUp}
-            style={{
-              left: item.x,
-              top: item.y,
-              background: item.color,
-              cursor: draggingId === item.id ? 'grabbing' : 'grab',
-              zIndex: draggingId === item.id ? 2 : 1,
-              boxShadow:
-                draggingId === item.id
-                  ? '0 12px 28px rgba(0,0,0,0.25)'
-                  : '0 4px 10px rgba(0,0,0,0.12)',
-            }}
-          >
-            #{item.id}
-            <small>
-              {Math.round(item.x)}, {Math.round(item.y)}
-            </small>
+      <div className='bm-drag-container'>
+        <div
+          ref={stageRef}
+          className='bm-drag-stage'
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          {items.map(item => (
+            <div
+              key={item.id}
+              className='bm-drag-item'
+              onPointerDown={e => handlePointerDown(e, item)}
+              onPointerUp={handlePointerUp}
+              style={{
+                left: item.x,
+                top: item.y,
+                background: item.color,
+                cursor: draggingId === item.id ? 'grabbing' : 'grab',
+                zIndex: draggingId === item.id ? 2 : 1,
+                boxShadow:
+                  draggingId === item.id
+                    ? '0 12px 28px rgba(0,0,0,0.25)'
+                    : '0 4px 10px rgba(0,0,0,0.12)',
+              }}
+            >
+              #{item.id}
+              <small>
+                {Math.round(item.x)}, {Math.round(item.y)}
+              </small>
+            </div>
+          ))}
+        </div>
+
+        <div className='bm-drag-info-panel'>
+          <h4>📍 Панель состояния и координат</h4>
+          <div className='bm-drag-info-list'>
+            {items.map(item => {
+              const isDragging = draggingId === item.id
+              return (
+                <div
+                  key={item.id}
+                  className={`bm-drag-info-card ${isDragging ? 'active' : ''}`}
+                  style={{ borderLeftColor: item.color }}
+                >
+                  <div className='bm-drag-info-header'>
+                    <span className='bm-drag-info-badge' style={{ backgroundColor: item.color }}>
+                      Блок #{item.id}
+                    </span>
+                    <span className={`bm-status-pill ${isDragging ? 'dragging' : 'idle'}`}>
+                      {isDragging ? 'Перетаскивание' : 'В покое'}
+                    </span>
+                  </div>
+
+                  <div className='bm-drag-info-grid'>
+                    <div className='bm-drag-info-metric'>
+                      <div className='bm-dim-label'>Стиль (left, top)</div>
+                      <div className='bm-dim-value'>
+                        {Math.round(item.x)}px, {Math.round(item.y)}px
+                      </div>
+                    </div>
+
+                    {isDragging && pointerCoords && stageRectCoords ? (
+                      <>
+                        <div className='bm-drag-info-metric'>
+                          <div className='bm-dim-label'>Курсор (clientX, clientY)</div>
+                          <div className='bm-dim-value'>
+                            {pointerCoords.clientX}, {pointerCoords.clientY}
+                          </div>
+                        </div>
+                        <div className='bm-drag-info-metric'>
+                          <div className='bm-dim-label'>Клик смещение (dx, dy)</div>
+                          <div className='bm-dim-value'>
+                            {dragOffsetRef.current.dx}, {dragOffsetRef.current.dy}
+                          </div>
+                        </div>
+                        <div className='bm-drag-info-metric'>
+                          <div className='bm-dim-label'>Stage (left, top)</div>
+                          <div className='bm-dim-value'>
+                            {stageRectCoords.left}, {stageRectCoords.top}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className='bm-drag-info-placeholder'>
+                        Потяни этот блок, чтобы увидеть расчет формулы
+                      </div>
+                    )}
+                  </div>
+
+                  {isDragging && pointerCoords && stageRectCoords && (
+                    <div className='bm-formula-explanation'>
+                      <code>
+                        x = {pointerCoords.clientX} (clientX) − {stageRectCoords.left} (stage.left) − {dragOffsetRef.current.dx} (dx) = <strong>{Math.round(item.x)}px</strong>
+                      </code>
+                      <br />
+                      <code>
+                        y = {pointerCoords.clientY} (clientY) − {stageRectCoords.top} (stage.top) − {dragOffsetRef.current.dy} (dy) = <strong>{Math.round(item.y)}px</strong>
+                      </code>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        ))}
+        </div>
       </div>
 
       <details className='bm-code-block'>
@@ -559,40 +646,96 @@ el.releasePointerCapture(e.pointerId);
 
 // ─── 5. Smart tooltip auto-flip (viewport-aware positioning) ───────────────
 
+type TooltipPlacement =
+  | 'top'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'left'
+  | 'right'
+
 function SmartTooltipDemo() {
   const [tooltip, setTooltip] = useState<{
     visible: boolean
     x: number
     y: number
-    placement: 'top' | 'bottom' | 'left' | 'right'
+    placement: TooltipPlacement
     text: string
   }>({ visible: false, x: 0, y: 0, placement: 'top', text: '' })
 
-  const showTooltip = (e: React.MouseEvent<HTMLButtonElement>, text: string) => {
+  const showTooltip = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    text: string,
+    wantedPlacement: TooltipPlacement = 'top'
+  ) => {
     const btn = e.currentTarget
     const rect = btn.getBoundingClientRect()
     const TT_W = 220
     const TT_H = 60
     const GAP = 8
 
-    // По умолчанию пытаемся показать сверху.
-    let placement: 'top' | 'bottom' | 'left' | 'right' = 'top'
-    let x = rect.left + rect.width / 2 - TT_W / 2
-    let y = rect.top - TT_H - GAP
+    const getCoords = (p: TooltipPlacement) => {
+      let tx = rect.left + rect.width / 2 - TT_W / 2
+      let ty = rect.top - TT_H - GAP
 
-    // Не помещается сверху? — переключаемся вниз.
-    if (y < 0) {
-      placement = 'bottom'
-      y = rect.bottom + GAP
+      if (p === 'top-left') {
+        tx = rect.left
+        ty = rect.top - TT_H - GAP
+      } else if (p === 'top-right') {
+        tx = rect.right - TT_W
+        ty = rect.top - TT_H - GAP
+      } else if (p === 'bottom') {
+        tx = rect.left + rect.width / 2 - TT_W / 2
+        ty = rect.bottom + GAP
+      } else if (p === 'bottom-left') {
+        tx = rect.left
+        ty = rect.bottom + GAP
+      } else if (p === 'bottom-right') {
+        tx = rect.right - TT_W
+        ty = rect.bottom + GAP
+      } else if (p === 'left') {
+        tx = rect.left - TT_W - GAP
+        ty = rect.top + rect.height / 2 - TT_H / 2
+      } else if (p === 'right') {
+        tx = rect.right + GAP
+        ty = rect.top + rect.height / 2 - TT_H / 2
+      }
+      return { x: tx, y: ty }
     }
-    // Не помещается ни сверху, ни снизу — сбоку.
-    if (placement === 'bottom' && y + TT_H > window.innerHeight) {
-      placement = 'right'
-      x = rect.right + GAP
-      y = rect.top + rect.height / 2 - TT_H / 2
-      if (x + TT_W > window.innerWidth) {
-        placement = 'left'
-        x = rect.left - TT_W - GAP
+
+    const fits = (tx: number, ty: number) => {
+      return (
+        tx >= GAP &&
+        ty >= GAP &&
+        tx + TT_W + GAP <= window.innerWidth &&
+        ty + TT_H + GAP <= window.innerHeight
+      )
+    }
+
+    const order: Record<TooltipPlacement, TooltipPlacement[]> = {
+      top: ['top', 'bottom', 'right', 'left'],
+      'top-left': ['top-left', 'bottom-left', 'right', 'left'],
+      'top-right': ['top-right', 'bottom-right', 'left', 'right'],
+      bottom: ['bottom', 'top', 'right', 'left'],
+      'bottom-left': ['bottom-left', 'top-left', 'right', 'left'],
+      'bottom-right': ['bottom-right', 'top-right', 'left', 'right'],
+      left: ['left', 'right', 'top', 'bottom'],
+      right: ['right', 'left', 'top', 'bottom'],
+    }
+
+    const placementsToTry = order[wantedPlacement]
+    let placement = wantedPlacement
+    let { x, y } = getCoords(placement)
+
+    for (const p of placementsToTry) {
+      const coords = getCoords(p)
+      if (fits(coords.x, coords.y)) {
+        placement = p
+        x = coords.x
+        y = coords.y
+        break
       }
     }
 
@@ -620,23 +763,37 @@ function SmartTooltipDemo() {
       </p>
 
       <div className='bm-tooltip-grid'>
-        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я слева сверху')} onMouseLeave={hideTooltip}>
+        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я слева сверху', 'top-left')} onMouseLeave={hideTooltip}>
           ↖ top-left
         </button>
-        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я сверху по центру')} onMouseLeave={hideTooltip}>
+        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я сверху по центру', 'top')} onMouseLeave={hideTooltip}>
           ↑ top-center
         </button>
-        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я справа сверху')} onMouseLeave={hideTooltip}>
+        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я справа сверху', 'top-right')} onMouseLeave={hideTooltip}>
           ↗ top-right
         </button>
-        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я слева снизу')} onMouseLeave={hideTooltip}>
+        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я слева снизу', 'bottom-left')} onMouseLeave={hideTooltip}>
           ↙ bottom-left
         </button>
-        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я внизу по центру')} onMouseLeave={hideTooltip}>
+        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я внизу по центру', 'bottom')} onMouseLeave={hideTooltip}>
           ↓ bottom-center
         </button>
-        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я справа снизу')} onMouseLeave={hideTooltip}>
+        <button className='bm-tt-btn' onMouseEnter={e => showTooltip(e, 'Я справа снизу', 'bottom-right')} onMouseLeave={hideTooltip}>
           ↘ bottom-right
+        </button>
+        <button
+          className='bm-tt-btn'
+          onMouseEnter={e => showTooltip(e, 'Я слева посередине', 'left')}
+          onMouseLeave={hideTooltip}
+        >
+          ← left
+        </button>
+        <button
+          className='bm-tt-btn'
+          onMouseEnter={e => showTooltip(e, 'Я справа посередине', 'right')}
+          onMouseLeave={hideTooltip}
+        >
+          → right
         </button>
       </div>
 

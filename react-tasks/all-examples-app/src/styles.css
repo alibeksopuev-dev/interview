@@ -3255,6 +3255,148 @@ th button {
   margin-top: 2px;
 }
 
+/* Drag & Drop demo layout and panel */
+.bm-drag-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .bm-drag-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bm-drag-info-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bm-drag-info-panel h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.bm-drag-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bm-drag-info-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.bm-drag-info-card.active {
+  border-color: #0ea5e9;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+  transform: translateY(-2px);
+}
+
+.bm-drag-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bm-drag-info-badge {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.bm-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 9999px;
+}
+
+.bm-status-pill.idle {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.bm-status-pill.dragging {
+  background: #dff0fa;
+  color: #0284c7;
+  animation: bmPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes bmPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.bm-drag-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.bm-drag-info-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bm-dim-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.bm-dim-value {
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.bm-drag-info-placeholder {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.bm-formula-explanation {
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #334155;
+  border-left: 2px solid #0ea5e9;
+  line-height: 1.5;
+}
+
+.bm-formula-explanation code {
+  font-family: 'Fira Code', monospace;
+}
+
+.bm-formula-explanation strong {
+  color: #0ea5e9;
+}
+
 /* Smart tooltip */
 .bm-tooltip-grid {
   display: grid;
