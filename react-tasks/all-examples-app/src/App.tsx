@@ -6,6 +6,8 @@ import { ThrottleShowcase } from './ThrottleExamples.tsx'
 import { UseQueryShowcase } from './UseQueryShowcase.tsx'
 import { SelectDataShowcase } from './SelectDataShowcase.tsx'
 import { EventLoopShowcase } from './EventLoopShowcase.tsx'
+import { ObserversShowcase } from './ObserversShowcase.tsx'
+import { BrowserMetricsShowcase } from './BrowserMetricsShowcase.tsx'
 
 type User = (typeof users)[number]
 type House = (typeof houses)[number]
@@ -111,6 +113,8 @@ const NAV_ITEMS = [
   { to: '/use-query', label: 'useQuery', badge: 'Hook' },
   { to: '/select-data', label: 'selectData', badge: 'Filter' },
   { to: '/event-loop', label: 'Event Loop', badge: 'Simulator' },
+  { to: '/observers', label: 'Observers', badge: 'DOM' },
+  { to: '/browser-metrics', label: 'Browser Metrics', badge: 'Coords' },
 ]
 
 export default function App() {
@@ -172,6 +176,22 @@ export default function App() {
             element={
               <div className='page-content'>
                 <EventLoopShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/observers'
+            element={
+              <div className='page-content'>
+                <ObserversShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/browser-metrics'
+            element={
+              <div className='page-content'>
+                <BrowserMetricsShowcase />
               </div>
             }
           />

@@ -568,6 +568,8 @@ function createTooltip(containerEl, tooltipEl) {
 
 **Условие:** Реализовать перетаскивание элемента мышью.
 
+#### Вариант A — наивный (mouse events, "дельта-подход")
+
 ```js
 function makeDraggable(el) {
     let isDragging = false;
@@ -604,6 +606,106 @@ function makeDraggable(el) {
     });
 }
 ```
+
+**Минусы наивного подхода:**
+
+- Слушатели на `document` живут даже после конца drag → надо аккуратно add/remove.
+- Не работает на touch-устройствах (нужен отдельный `touchstart/move/end`).
+- Если курсор уйдёт за пределы окна / в iframe — `mouseup` может не прийти, и элемент "залипнет".
+- `offsetLeft` НЕ учитывает CSS `transform` родителя.
+
+#### Вариант B — Pointer Events + Pointer Capture (production-ready)
+
+`Pointer Events` — единый API для мыши, тача и стилуса. `setPointerCapture` гарантирует, что все события до `pointerup` прилетят на исходный элемент, даже если курсор покинул его область.
+
+```js
+function makeDraggablePointer(el, stage) {
+    let dragOffset = { dx: 0, dy: 0 };
+    let activeId = null;
+
+    el.addEventListener('pointerdown', (e) => {
+        const rect = el.getBoundingClientRect();
+        // Смещение точки клика относительно левого верхнего угла элемента.
+        // Без этого блок "телепортируется" углом к курсору.
+        dragOffset = {
+            dx: e.clientX - rect.left,
+            dy: e.clientY - rect.top,
+        };
+        activeId = e.pointerId;
+        el.setPointerCapture(e.pointerId); // ловим все последующие события
+    });
+
+    el.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== activeId) return;
+
+        // Переводим координаты курсора (viewport) в систему stage.
+        const stageRect = stage.getBoundingClientRect();
+        let x = e.clientX - stageRect.left - dragOffset.dx;
+        let y = e.clientY - stageRect.top  - dragOffset.dy;
+
+        // Clamp в границы stage.
+        x = Math.max(0, Math.min(stageRect.width  - el.offsetWidth,  x));
+        y = Math.max(0, Math.min(stageRect.height - el.offsetHeight, y));
+
+        el.style.left = `${x}px`;
+        el.style.top  = `${y}px`;
+    });
+
+    el.addEventListener('pointerup', (e) => {
+        if (e.pointerId === activeId) {
+            el.releasePointerCapture(e.pointerId);
+            activeId = null;
+        }
+    });
+}
+```
+
+**Почему именно так:**
+
+| Деталь | Зачем нужна |
+|---|---|
+| `pointerdown/move/up` | Универсально: мышь, palec, stylus. Один обработчик вместо трёх пар. |
+| `setPointerCapture` | События доходят даже если курсор ушёл за границы / окно / iframe. Решает баг "drag залипает". |
+| `getBoundingClientRect` для смещения | Учитывает scroll, `transform`, `position: fixed` родителей. `offsetLeft` — не учитывает. |
+| `touch-action: none` в CSS | Отключает встроенный gesture браузера (скролл/zoom), иначе на тач-устройстве будут конфликты. |
+| Clamp в `pointermove` | Не даёт элементу улететь за пределы stage. |
+| Сохранение `pointerId` | Защищает от мульти-тача: только "наш" палец двигает элемент. |
+
+**Важно про CSS `touch-action`:**
+
+```css
+.drag-item { touch-action: none; }
+/* Без этого pointermove на тач-устройстве конкурирует со скроллом страницы
+   и срабатывает невпопад (или вообще не срабатывает). */
+```
+
+#### Drag with HTML5 Drag API (`draggable="true"`) — когда использовать
+
+```html
+<div draggable="true">Drag me</div>
+```
+
+```js
+el.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', 'payload');
+    e.dataTransfer.effectAllowed = 'move';
+});
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault(); // ОБЯЗАТЕЛЬНО, иначе drop не сработает
+});
+
+dropZone.addEventListener('drop', (e) => {
+    const data = e.dataTransfer.getData('text/plain');
+});
+```
+
+- ✅ Когда нужно **перетаскивать между окнами / приложениями** (например, файлы из ОС).
+- ✅ Когда нужны нативные **drag images** браузера.
+- ❌ Когда нужен полный контроль над визуалом (анимации, springs, snap) — берите Pointer Events.
+- ❌ HTML5 Drag API очень капризный: `dragover.preventDefault()` обязателен, нет `dragmove`, плохо работает на мобильных.
+
+**Правило выбора:** на интервью почти всегда ждут **Pointer Events + capture**. HTML5 Drag API упоминают только в контексте drop из ОС.
 
 ---
 
@@ -767,6 +869,59 @@ function positionDropdown(buttonEl, dropdownEl) {
 
 ---
 
+### Задача 9: Умный tooltip с auto-flip (top → bottom → left → right)
+
+**Условие:** Tooltip по умолчанию открывается **над** триггером. Если сверху не хватает места — вниз. Если и снизу не помещается — вбок. По горизонтали — clamp к viewport.
+
+```js
+function placeTooltip(triggerEl, tooltipEl) {
+    const rect = triggerEl.getBoundingClientRect();
+    const ttRect = tooltipEl.getBoundingClientRect();
+    const GAP = 8;
+    const VW = window.innerWidth;
+    const VH = window.innerHeight;
+
+    let placement = 'top';
+    let x = rect.left + rect.width / 2 - ttRect.width / 2;
+    let y = rect.top - ttRect.height - GAP;
+
+    // 1. Не помещаемся сверху — вниз
+    if (y < 0) {
+        placement = 'bottom';
+        y = rect.bottom + GAP;
+    }
+
+    // 2. И вниз не помещаемся — вбок
+    if (placement === 'bottom' && y + ttRect.height > VH) {
+        const hasRight = rect.right + ttRect.width + GAP < VW;
+        placement = hasRight ? 'right' : 'left';
+        y = rect.top + rect.height / 2 - ttRect.height / 2;
+        x = hasRight ? rect.right + GAP : rect.left - ttRect.width - GAP;
+    }
+
+    // 3. Финальный clamp по обеим осям
+    x = Math.max(GAP, Math.min(VW - ttRect.width  - GAP, x));
+    y = Math.max(GAP, Math.min(VH - ttRect.height - GAP, y));
+
+    // 4. Применяем (position: fixed → координаты viewport)
+    tooltipEl.style.position = 'fixed';
+    tooltipEl.style.left = `${x}px`;
+    tooltipEl.style.top  = `${y}px`;
+    tooltipEl.dataset.placement = placement; // для стрелочки в CSS
+}
+```
+
+**Ключевые моменты:**
+
+- **`position: fixed`** — координаты задаются в системе viewport, точно как у `getBoundingClientRect().top/left`. Не нужно прибавлять `scrollY/X`.
+- **Порядок проверок (top → bottom → side)** — стандартная стратегия flip. Floating UI / Popper делают то же самое, просто с конфигом приоритетов.
+- **Размер tooltip известен заранее?** Если нет — отрендери его невидимо (`visibility: hidden`), измерь `getBoundingClientRect`, потом покажи. Двухпроходный рендер.
+- **Стрелочка** — позиционируется по `placement` через `data-placement` атрибут и CSS селекторы.
+
+**На интервью спросят:** "А что если родитель имеет `transform`?" → `position: fixed` будет позиционироваться относительно этого родителя, а не viewport (это особенность спецификации). Решение — портал в `body` через `createPortal` (React) или `appendChild(document.body, tooltipEl)`.
+
+---
+
 ## 9. Типичные ловушки
 
 ### Ловушка 1: `offsetX/offsetY` с дочерними элементами
@@ -846,6 +1001,49 @@ window.addEventListener('scroll', handler); // ❌ возможна задерж
 window.addEventListener('scroll', handler, { passive: true });
 window.addEventListener('touchmove', handler, { passive: true });
 ```
+
+### Ловушка 7: Drag не работает на touch-устройстве (забыли `touch-action`)
+
+```css
+/* Без этого CSS pointermove на тач-устройстве конкурирует со скроллом */
+.draggable { touch-action: none; }
+```
+
+```js
+// + pointer events вместо mouse events
+el.addEventListener('pointerdown', start);
+// (touchstart на iOS требует passive: false для preventDefault)
+```
+
+Симптом: на десктопе работает, на телефоне курсор "скачет" или ничего не происходит. Причина: браузер интерпретирует жест как scroll/zoom и отменяет `pointermove`.
+
+### Ловушка 8: `position: fixed` неожиданно позиционируется относительно `transform`-родителя
+
+```css
+.parent { transform: translate(0, 0); }  /* создаёт containing block */
+.child  { position: fixed; top: 0; left: 0; }  /* НЕ относительно viewport! */
+```
+
+Любой `transform`, `filter`, `perspective`, `will-change: transform` на родителе превращает его в **containing block** для `position: fixed` потомков. Это одна из самых неочевидных проблем при позиционировании popover'ов и tooltip'ов.
+
+**Решение:** портал tooltip'а в `document.body` (React: `createPortal`).
+
+### Ловушка 9: Курсор "телепортируется" в угол при drag-старте
+
+```js
+// ❌ Без учёта смещения клика — элемент прыгает левым верхом к курсору
+el.style.left = e.clientX + 'px';
+
+// ✅ Запомнили offset на pointerdown, вычитаем в pointermove
+const rect = el.getBoundingClientRect();
+const dx = e.clientX - rect.left;
+const dy = e.clientY - rect.top;
+// ...later:
+el.style.left = (e.clientX - dx) + 'px';
+el.style.top  = (e.clientY - dy) + 'px';
+```
+
+Самый частый баг в собственном drag&drop. На интервью спросят: "Что не так с этим кодом?" — ответ: не учтена точка клика внутри элемента.
 
 ---
 

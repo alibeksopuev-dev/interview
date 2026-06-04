@@ -147,7 +147,117 @@ scheduler.postTask(() => console.log('Низкий приоритет для а�
 
 ---
 
-## 4. Различия между браузером и Node.js
+## 4. `async/await` шаг за шагом
+
+`await` — это синтаксический сахар над промисами. Когда исполнение доходит до `await`, текущая функция **приостанавливается**, а её «продолжение» (остаток кода после `await`) помещается в **очередь микрозадач** как обработчик `.then()` ожидаемого промиса.
+
+```javascript
+async function foo() {
+  console.log('1: внутри foo до await');
+  await Promise.resolve();         // ← здесь функция «приостанавливается»
+  console.log('3: продолжение foo'); // ← это микрозадача
+}
+
+console.log('0: до вызова foo');
+foo();
+console.log('2: после вызова foo');
+```
+
+**Порядок вывода:** `0 → 1 → 2 → 3`.
+
+### Почему именно так
+1. `console.log('0')` — синхронно.
+2. `foo()` вызывается синхронно, тело выполняется до `await`. Печатается `1`.
+3. На `await` функция «возвращается»: вызывающему коду возвращается промис, остаток `foo` упакован как `.then()` callback и поставлен в **microtask queue**.
+4. `console.log('2')` — синхронно, продолжаем главный поток.
+5. Стек пуст → Event Loop забирает микрозадачи → выполняется `3`.
+
+### Важная деталь: `await nonPromise`
+Даже если справа от `await` стоит **не-промис** (например, число), движок оборачивает его в `Promise.resolve(value)`. Это значит, что **минимум одна микрозадача** всегда добавляется на каждый `await`.
+
+```javascript
+async function f() {
+  await 42; // Эквивалентно: await Promise.resolve(42)
+  console.log('after await');
+}
+```
+
+---
+
+## 5. React и Event Loop
+
+React не запускает свой собственный Event Loop — он встраивается в браузерный через **React Scheduler** (внутренне использует `MessageChannel`/`postMessage`, что даёт макрозадачу с возможностью прервать длинную работу).
+
+### Жизненный цикл рендера React 18+
+```
+Event (click, setState)
+  ↓
+React Scheduler планирует work
+  ↓
+[Render Phase — может быть прерван (concurrent mode)]
+  ↓ Reconciliation (создание Fiber дерева)
+[Commit Phase — синхронно, нельзя прервать]
+  ↓ DOM mutations
+  ↓ useLayoutEffect callbacks  ← синхронно, ДО paint
+  ↓
+[Browser Paint]
+  ↓
+useEffect callbacks            ← асинхронно, ПОСЛЕ paint (как микрозадача)
+```
+
+### Automatic Batching (React 18)
+До React 18: `setState` в `setTimeout`/`fetch.then` НЕ батчился → каждый setState = отдельный рендер.
+
+```javascript
+// React 17 — 2 рендера
+setTimeout(() => {
+  setCount(c => c + 1); // render #1
+  setName('Alice');     // render #2
+}, 0);
+
+// React 18 — 1 рендер (automatic batching)
+setTimeout(() => {
+  setCount(c => c + 1);
+  setName('Alice');
+  // → React Scheduler собирает оба обновления в одну работу
+}, 0);
+```
+
+### `flushSync` — выход из batching
+Когда нужно гарантированно обновить DOM до следующей строки (например, для измерения):
+```javascript
+flushSync(() => {
+  setCount(1); // синхронный render+commit
+});
+// Здесь DOM уже обновлён
+```
+
+### `useEffect` vs `useLayoutEffect`
+| Хук | Когда выполняется | Видит ли пользователь промежуточное состояние? |
+| --- | --- | --- |
+| `useLayoutEffect` | Синхронно после DOM mutations, ДО paint | Нет |
+| `useEffect` | Асинхронно после paint | Да (фликер возможен) |
+
+**Правило:** если эффект читает DOM или мутирует его для измерения — `useLayoutEffect`. Во всех остальных случаях — `useEffect`.
+
+---
+
+## 6. Microtask Starvation (морение микрозадачами)
+
+Поскольку очередь микрозадач очищается **полностью** перед рендером и макрозадачами, бесконечный цикл из микрозадач **заморозит UI**:
+
+```javascript
+function starve() {
+  Promise.resolve().then(starve); // ⚠️ rendering и события НИКОГДА не обработаются
+}
+starve();
+```
+
+Это причина, почему для **прерываемых** длинных вычислений используют `setTimeout(0)` или `MessageChannel` (макрозадачи), а не `queueMicrotask`/Promise — между макрозадачами браузер успевает отрисовать кадр и обработать пользовательский ввод.
+
+---
+
+## 7. Различия между браузером и Node.js
 
 Node.js использует библиотеку асинхронного ввода-вывода **libuv**, и его Event Loop имеет другую структуру фаз по сравнению с браузером.
 
