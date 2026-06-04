@@ -28,6 +28,13 @@ body {
   height: 100vh;
 }
 
+.toggle-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
 .sidebar-logo {
   font-size: 16px;
   font-weight: 700;

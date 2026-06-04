@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { DataTableShowcase } from './showcases/DataTableShowcase/DataTableShowcase'
 import { ThrottleShowcase } from './showcases/ThrottleShowcase/ThrottleShowcase'
@@ -20,23 +21,37 @@ const NAV_ITEMS = [
 ]
 
 export default function App() {
+  const [isOpen, setIsOpen] = useState(true)
+  const toggle = () => {
+    setIsOpen(!isOpen)
+  }
   return (
     <div className='app-layout'>
-      <aside className='app-sidebar'>
-        <div className='sidebar-logo'>Interview</div>
-        <nav className='sidebar-nav'>
-          {NAV_ITEMS.map(({ to, label, badge }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => `sidebar-link${isActive ? ' sidebar-link-active' : ''}`}
-            >
-              <span className='sidebar-link-label'>{label}</span>
-              <span className='sidebar-link-badge'>{badge}</span>
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
+      {isOpen ? (
+        <aside className='app-sidebar'>
+          <div className='sidebar-logo'>Interview</div>
+          <nav className='sidebar-nav'>
+            {NAV_ITEMS.map(({ to, label, badge }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `sidebar-link${isActive ? ' sidebar-link-active' : ''}`
+                }
+              >
+                <span className='sidebar-link-label'>{label}</span>
+                <span className='sidebar-link-badge'>{badge}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </aside>
+      ) : null}
+      <button
+        onClick={toggle}
+        className='toggle-button'
+      >
+        Toggle menu
+      </button>
 
       <main className='app-main'>
         <Routes>

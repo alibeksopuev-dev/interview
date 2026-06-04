@@ -308,6 +308,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 .el-diagram-container {
@@ -404,7 +405,8 @@
 .node-micro .el-tooltip { right: 0; top: 60px; }
 .node-render .el-tooltip { bottom: 60px; left: 50%; transform: translate(-50%, 6px); }
 .node-render:hover .el-tooltip { transform: translate(-50%, 0); }
-.node-macro .el-tooltip { left: 0; top: 60px; }
+.node-macro .el-tooltip { left: 0; bottom: 60px; top: auto; transform: translateY(6px); }
+.node-macro:hover .el-tooltip { transform: translateY(0); }
 
 .el-tooltip-title {
   font-size: 12px;
