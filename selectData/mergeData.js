@@ -65,3 +65,32 @@ function mergeDataOld(sessions) {
     }));
 }
 exports.mergeDataOld = mergeDataOld;
+function mergeDataMine(sessions) {
+    const results = [];
+    const sessionsReversed = sessions.slice().reverse();
+    const sessionsProcessed = [];
+    const sessionsForUser = new Map();
+    sessionsReversed.forEach((session) => {
+        if (sessionsForUser.has(session.user)) {
+            const userSession = sessionsForUser.get(session.user);
+            userSession.duration += session.duration;
+            session.equipment.forEach((eq) => userSession.equipment.add(eq));
+        }
+        else {
+            const clonedSession = {
+                ...session,
+                equipment: new Set(session.equipment),
+            };
+            sessionsForUser.set(session.user, clonedSession);
+            sessionsProcessed.push(clonedSession);
+        }
+    });
+    sessionsProcessed.reverse();
+    sessionsProcessed.forEach((session) => {
+        results.push({
+            ...session,
+            equipment: Array.from(session.equipment).sort(),
+        });
+    });
+    return results;
+}

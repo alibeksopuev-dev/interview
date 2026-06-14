@@ -29,7 +29,7 @@ const isDeepEqual = (valueA: unknown, valueB: unknown): boolean => {
 }
 
 export default function deepClone<T>(value: T): T {
-  if (typeof value !== 'object' && value === null) {
+  if (typeof value !== 'object' || value === null) {
     return value
   }
 

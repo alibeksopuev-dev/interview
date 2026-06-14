@@ -23,7 +23,7 @@ const isDeepEqual = (valueA, valueB) => {
     return true;
 };
 function deepClone(value) {
-    if (typeof value !== 'object' && value === null) {
+    if (typeof value !== 'object' || value === null) {
         return value;
     }
     if (Array.isArray(value)) {

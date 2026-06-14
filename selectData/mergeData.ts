@@ -68,3 +68,34 @@ export function mergeDataOld(sessions: Array<Session>): Array<Session> {
     equipment: Array.from(session.equipment).sort(),
   }))
 }
+
+function mergeDataMine(sessions: Array<Session>): Array<Session> {
+  const results: Array<Session> = [];
+  const sessionsReversed = sessions.slice().reverse();
+  const sessionsProcessed: Array<SessionWithSet> = [];
+  const sessionsForUser = new Map<number, SessionWithSet>();
+
+  sessionsReversed.forEach((session) => {
+    if (sessionsForUser.has(session.user)) {
+      const userSession = sessionsForUser.get(session.user)!;
+      userSession.duration += session.duration;
+      session.equipment.forEach((eq) => userSession.equipment.add(eq));
+    } else {
+      const clonedSession: SessionWithSet = {
+        ...session,
+        equipment: new Set(session.equipment),
+      };
+      sessionsForUser.set(session.user, clonedSession);
+      sessionsProcessed.push(clonedSession);
+    }
+  });
+  sessionsProcessed.reverse();
+  sessionsProcessed.forEach((session) => {
+    results.push({
+      ...session,
+      equipment: Array.from(session.equipment).sort(),
+    });
+  });
+  return results;
+}
+

@@ -92,3 +92,13 @@ curriedAdd(1)(2)(3); // 6
 curriedAdd(1, 2)(3); // 6
 curriedAdd(1)(2, 3); // 6
 curriedAdd(1, 2, 3); // 6
+function curry4(func) {
+    function curried(...args) {
+        if (args.length >= func.length) {
+            return func.apply(this, args);
+        }
+        return curried.bind(this, ...args);
+    }
+    return curried;
+}
+exports.default = curry4;
