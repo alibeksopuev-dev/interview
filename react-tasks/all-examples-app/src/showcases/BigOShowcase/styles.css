@@ -1,0 +1,715 @@
+/* ================================================================ */
+/* Big O Showcase Styles                                            */
+/* ================================================================ */
+
+.bo-root {
+  padding: 32px 0;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #0f172a;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.bo-header {
+  margin-bottom: 4px;
+}
+.bo-title {
+  margin: 0 0 6px 0;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 50%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.bo-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  max-width: 900px;
+}
+
+/* ── Intro card ─────────────────────────────────────────────────── */
+.bo-intro-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+.bo-intro-toggle {
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bo-intro-toggle:hover {
+  background: #f1f5f9;
+}
+.bo-intro-body {
+  padding: 0 20px 18px 20px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #334155;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+.bo-intro-body p {
+  margin: 0 0 10px 0;
+}
+.bo-intro-body ul {
+  margin: 10px 0;
+  padding-left: 22px;
+}
+.bo-intro-body li {
+  margin-bottom: 6px;
+}
+.bo-intro-body code {
+  background: #e2e8f0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12.5px;
+}
+
+/* ── Case tabs ──────────────────────────────────────────────────── */
+.bo-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bo-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.bo-tab:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.bo-tab.active {
+  background: #f8fafc;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.bo-tab-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+/* ── Overview card ──────────────────────────────────────────────── */
+.bo-overview {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+.bo-overview-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.bo-overview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 800;
+}
+.bo-overview-badge-emoji {
+  font-size: 16px;
+}
+.bo-overview-badge-text {
+  font-size: 14px;
+}
+.bo-overview-verdict {
+  font-size: 14px;
+  font-weight: 700;
+}
+.bo-overview-section {
+  padding-top: 4px;
+}
+.bo-overview-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.bo-overview-section p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #334155;
+}
+
+/* ── Main grid ──────────────────────────────────────────────────── */
+.bo-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+@media (max-width: 980px) {
+  .bo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bo-left,
+.bo-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ── Step banner ────────────────────────────────────────────────── */
+.bo-step-banner {
+  background: linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.bo-step-banner-head {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #1d4ed8;
+  margin-bottom: 6px;
+}
+.bo-step-banner-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #0f172a;
+  font-weight: 500;
+}
+.bo-step-hint {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.65);
+  border-left: 3px solid #f59e0b;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: #78350f;
+  line-height: 1.55;
+}
+.bo-step-hint span {
+  margin-right: 6px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────── */
+.bo-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+.bo-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.bo-card-sub {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ── Code editor ────────────────────────────────────────────────── */
+.bo-code-editor {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 10px 0;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+.bo-code-line {
+  display: flex;
+  gap: 12px;
+  padding: 2px 14px;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  transition: background 0.15s;
+}
+.bo-code-line.active {
+  background: rgba(99, 102, 241, 0.18);
+  border-left: 3px solid #818cf8;
+  padding-left: 11px;
+  color: #ffffff;
+}
+.bo-code-num {
+  color: #475569;
+  width: 22px;
+  text-align: right;
+  user-select: none;
+  flex-shrink: 0;
+}
+.bo-code-text {
+  white-space: pre;
+}
+
+/* ── Controls ───────────────────────────────────────────────────── */
+.bo-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bo-btn {
+  padding: 7px 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bo-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.bo-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.bo-btn-primary {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #ffffff;
+}
+.bo-btn-primary:hover:not(:disabled) {
+  background: #4338ca;
+  border-color: #4338ca;
+}
+.bo-speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 11px;
+  color: #64748b;
+}
+.bo-speed input[type='range'] {
+  width: 90px;
+}
+
+/* ── Ops counter ────────────────────────────────────────────────── */
+.bo-ops-card {
+  text-align: center;
+}
+.bo-ops-display {
+  margin: 8px 0;
+}
+.bo-ops-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.bo-ops-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+.bo-ops-progress {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 10px 0 8px 0;
+}
+.bo-ops-progress-bar {
+  height: 100%;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+.bo-ops-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* ── Vars row ───────────────────────────────────────────────────── */
+.bo-vars {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.bo-var {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f1f5f9;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #1e293b;
+}
+.bo-var code {
+  color: #4f46e5;
+  font-weight: 700;
+}
+
+/* ── Array view ─────────────────────────────────────────────────── */
+.bo-array-block {
+  margin-bottom: 14px;
+}
+.bo-array-block:last-child {
+  margin-bottom: 0;
+}
+.bo-array-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.bo-array-cells {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.bo-array-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 8px;
+}
+
+/* ── Cell ───────────────────────────────────────────────────────── */
+.bo-cell {
+  min-width: 42px;
+  padding: 8px 6px 4px 6px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transition: all 0.3s;
+}
+.bo-cell-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.bo-cell-index {
+  font-size: 9px;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.bo-cell-tag {
+  position: absolute;
+  bottom: -18px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #4f46e5;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.bo-cell-idle {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+.bo-cell-active {
+  background: #eff6ff;
+  border-color: #60a5fa;
+}
+.bo-cell-compared {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.25);
+}
+.bo-cell-window {
+  background: #ecfeff;
+  border-color: #06b6d4;
+}
+.bo-cell-discarded {
+  background: #fafafa;
+  border-color: #e2e8f0;
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.bo-cell-matched {
+  background: #d1fae5;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+.bo-cell-merged {
+  background: #ede9fe;
+  border-color: #8b5cf6;
+}
+
+/* ── Legend ─────────────────────────────────────────────────────── */
+.bo-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+.bo-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+.bo-cell-mini {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1.5px solid transparent;
+}
+
+/* ── Complexity chart ───────────────────────────────────────────── */
+.bo-chart-block {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+.bo-chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #0f172a;
+}
+.bo-chart-svg {
+  width: 100%;
+  height: auto;
+  background: #fcfcfd;
+  border-radius: 8px;
+}
+.bo-chart-legend {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.bo-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #475569;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-weight: 500;
+}
+.bo-chart-legend-item.active {
+  background: #f1f5f9;
+  font-weight: 800;
+  color: #0f172a;
+}
+.bo-chart-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.bo-chart-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+}
+
+/* ── Pitfalls ───────────────────────────────────────────────────── */
+.bo-pitfalls {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+.bo-pitfalls-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #9a3412;
+  margin-bottom: 10px;
+}
+.bo-pitfalls ul {
+  margin: 0;
+  padding-left: 22px;
+}
+.bo-pitfalls li {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #7c2d12;
+  margin-bottom: 6px;
+}
+.bo-source {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #92400e;
+}
+.bo-source code {
+  background: #fef3c7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11.5px;
+}
+
+/* ── Table ──────────────────────────────────────────────────────── */
+.bo-table-block {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  overflow-x: auto;
+}
+.bo-table-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.bo-table-block h1,
+.bo-table-block hr,
+.bo-table-block .pagination {
+  display: none !important;
+}
+.bo-table-block table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.bo-table-block th,
+.bo-table-block td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+.bo-table-block th button {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.bo-table-block th button:hover {
+  color: #4f46e5;
+}
+.bo-table-num {
+  font-family: 'JetBrains Mono', monospace;
+  color: #334155;
+}
+.bo-table-cell-highlight {
+  color: #4f46e5;
+  font-weight: 700;
+}
+.bo-table-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.bo-table-emoji {
+  margin-left: 6px;
+}
+.bo-table-hint {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* ── Cheat sheet ────────────────────────────────────────────────── */
+.bo-cheat {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.bo-cheat-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+.bo-cheat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.bo-cheat-item {
+  border-left: 4px solid #e2e8f0;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+.bo-cheat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.bo-cheat-emoji {
+  font-size: 14px;
+}
+.bo-cheat-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 13px;
+  color: #0f172a;
+}
+.bo-cheat-verdict {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bo-cheat-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #475569;
+}

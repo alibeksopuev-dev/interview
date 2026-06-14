@@ -42,6 +42,21 @@ const result = await myPromise // ждём пока промис выполни�
 console.log(result) // 'готово!'
 ```
 
+### ❓ Связь `resolve(value)` и `onFulfilled` (из `.then(onFulfilled)`)
+
+Частый вопрос: **Является ли вызов `resolve(result)` непосредственным запуском `onFulfilled`?**
+
+**Нет, это разные этапы.**
+
+* **`resolve(result)`** — это вызов функции управления состоянием, предоставляемой JS-движком. Он переводит промис из состояния `pending` в `fulfilled` и фиксирует результат `result`.
+* **`onFulfilled(result)`** — это ваш колбэк, который вы передали в `.then(onFulfilled)`.
+
+**Как они связаны на самом деле:**
+1. Вы вызываете `resolve(result)`.
+2. Промис переходит в состояние `fulfilled`.
+3. JS-движок планирует запуск `onFulfilled(result)`, добавляя его в **очередь микрозадач** (Microtask Queue).
+4. Колбэк `onFulfilled` вызывается **асинхронно**, когда стек вызовов очистится.
+
 ---
 
 ## 📌 Введение: в чём идея `Promise.all`?
@@ -531,3 +546,576 @@ promiseAll(iterable)
            reject(err)  ✗  ← первый rejection → всё, финал
          )
 ```
+
+---
+
+# Полный Promise API — справочник по всем методам
+
+---
+
+## 🔴 Promise.all — поведение при ошибке (Fail Fast)
+
+Если хотя бы один промис упал — `Promise.all` немедленно отклоняется. Остальные промисы продолжают работать в фоне, но результаты теряются.
+
+```typescript
+try {
+  const [a, b, c] = await Promise.all([
+    fetchA(),  // OK
+    fetchB(),  // ОШИБКА через 800мс
+    fetchC(),  // OK, но результат потерян
+  ])
+} catch (err) {
+  console.log(err) // "Network Error"
+}
+```
+
+**Пошаговый алгоритм:**
+1. **Параллельный старт** — все промисы запускаются одновременно в фоновом режиме.
+2. **Первое отклонение** — на 800мс падает `fetchB`. Внутри срабатывает `catch`, который вызывает `reject(err)` внешнего промиса.
+3. **Игнорирование остальных** — на 1200мс и 1500мс завершаются `fetchC` и `fetchA`. Но внешний промис уже перешёл в статус `rejected`, его состояние изменить нельзя.
+
+**Связь resolve/reject с .then/.catch:**
+> Первый же возникший `reject(err)` во внутреннем цикле мгновенно отклоняет весь `Promise.all`. Любые последующие успешные выполнения `resolve()` или другие `reject()` игнорируются, так как состояние промиса уже зафиксировано. Внешние обработчики `.catch()` сработают незамедлительно.
+
+**Big O:**
+- Время: `O(N)` — подписка на промисы
+- Память: `O(N)` — хранение результатов до первой ошибки
+
+**Ключевой вывод:** Это называется "fail-fast" — провал одного убивает всё. Для устойчивости используй `allSettled`.
+
+---
+
+## 🔵 Promise.allSettled
+
+Ждёт ВСЕ промисы, независимо от результата. Никогда не отклоняется. Возвращает массив объектов со статусом каждого промиса.
+
+```typescript
+const results = await Promise.allSettled([
+  fetchA(),  // OK
+  fetchB(),  // ОШИБКА
+  fetchC(),  // OK
+])
+
+// results[0] → { status: "fulfilled", value: "A" }
+// results[1] → { status: "rejected",  reason: "err" }
+// results[2] → { status: "fulfilled", value: "C" }
+```
+
+**Ручная реализация:**
+
+```typescript
+type SettledResult<T> =
+  | { status: "fulfilled"; value: Awaited<T> }
+  | { status: "rejected"; reason: any };
+
+export default function promiseAllSettled<T extends readonly unknown[] | []>(
+  iterable: T,
+): Promise<{ -readonly [P in keyof T]: SettledResult<T[P]> }> {
+  return new Promise((resolve) => {
+    const results = new Array(iterable.length);
+    let unresolved = iterable.length;
+
+    if (unresolved === 0) {
+      resolve(results as any);
+      return;
+    }
+
+    iterable.forEach(async (item, index) => {
+      try {
+        const value = await item;
+        results[index] = { status: "fulfilled", value };
+      } catch (reason) {
+        results[index] = { status: "rejected", reason };
+      } finally {
+        unresolved -= 1;
+        if (unresolved === 0) {
+          resolve(results as any);
+        }
+      }
+    });
+  });
+}
+```
+
+**Пошаговый алгоритм:**
+1. **Инициализация** — создаётся внешний промис. `reject` не объявляется, так как метод никогда не отклоняется.
+2. **Безопасный перехват** — каждый элемент ожидает выполнения. Успех записывается как `{status: "fulfilled", value}`. Сбой перехватывается в `catch` и записывается как `{status: "rejected", reason}`.
+3. **Финальный сбор** — в блоке `finally` уменьшается `unresolved`. Когда все элементы обработаны (`unresolved === 0`), вызывается `resolve(results)`.
+
+**Связь resolve/reject с .then/.catch:**
+> Функция `reject` во внешнем `new Promise` никогда не вызывается. Все исключения перехватываются в блоке `catch` и превращаются в обычные объекты со свойством `status: "rejected"`. Внешний промис всегда переходит в состояние `fulfilled`, что позволяет обрабатывать результаты в секции `.then()` без риска ухода в `.catch()`.
+
+**Big O:**
+- Время: `O(N)` — ожидание всех элементов
+- Память: `O(N)` — массив результатов, содержащий описания статусов
+
+**Когда использовать:** нужно собрать ВСЕ результаты, даже если часть упала. Например: массовая загрузка файлов.
+
+---
+
+## 🟡 Promise.race
+
+Возвращает результат ПЕРВОГО завершившегося промиса — неважно, выполнен или отклонён. Остальные промисы продолжают работать, но игнорируются.
+
+```typescript
+const result = await Promise.race([
+  fetchData(),         // долго
+  timeout(3000),       // 3 секунды
+])
+// Кто первый — тот и выиграл!
+```
+
+**Ручная реализация:**
+
+```typescript
+export default function promiseRace<T extends readonly unknown[] | []>(
+  iterable: T,
+): Promise<Awaited<T[number]>> {
+  return new Promise((resolve, reject) => {
+    if (iterable.length === 0) {
+      return; // Оставляем в состоянии pending навсегда (как и нативный Promise.race)
+    }
+
+    iterable.forEach(async (item) => {
+      try {
+        const result = await item;
+        resolve(result as Awaited<T[number]>);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
+}
+```
+
+**Пошаговый алгоритм:**
+1. **Запуск гонки** — все промисы запускаются параллельно. Если передан пустой массив, промис зависает в состоянии `pending` навсегда (поведение JS-спецификации).
+2. **Первое событие** — как только один из промисов разрешается или отклоняется, его результат передаётся внешнему `resolve()` или `reject()`.
+3. **Фиксация состояния** — поскольку промисы одноразовые, все последующие результаты просто игнорируются.
+
+**Связь resolve/reject с .then/.catch:**
+> Кто первый вызовет `resolve(result)` или `reject(err)` внутри цикла, тот и определит финальный исход внешнего промиса. После первого вызова состояние фиксируется, и все последующие вызовы от других участников гонки игнорируются.
+
+**Big O:**
+- Время: `O(N)` — подписка на все промисы
+- Память: `O(1)` — память под результаты не выделяется
+
+**Когда использовать:** таймауты — `Promise.race([fetch(...), timeout(5000)])` — что быстрее?
+
+---
+
+## 🟣 Promise.any
+
+Возвращает результат ПЕРВОГО успешно выполненного промиса. Ошибки игнорируются. Отклоняется только если ВСЕ промисы провалились (`AggregateError`).
+
+```typescript
+const data = await Promise.any([
+  fetchFromServerA(),  // ОШИБКА
+  fetchFromServerB(),  // OK (медленно)
+  fetchFromCache(),    // OK (быстро) ← победитель
+])
+// Первый успех — данные из кеша
+```
+
+**Ручная реализация:**
+
+```typescript
+export default function promiseAny<T extends readonly unknown[] | []>(
+  iterable: T,
+): Promise<Awaited<T[number]>> {
+  return new Promise((resolve, reject) => {
+    let rejectedCount = 0;
+    const errors: any[] = [];
+
+    if (iterable.length === 0) {
+      reject(new AggregateError([], "All promises were rejected"));
+      return;
+    }
+
+    iterable.forEach(async (item, index) => {
+      try {
+        const value = await item;
+        resolve(value as Awaited<T[number]>);
+      } catch (err) {
+        errors[index] = err;
+        rejectedCount += 1;
+        if (rejectedCount === iterable.length) {
+          reject(new AggregateError(errors, "All promises were rejected"));
+        }
+      }
+    });
+  });
+}
+```
+
+**Пошаговый алгоритм:**
+1. **Инициализация** — создаётся внешний промис, счётчик `rejectedCount = 0` и массив ошибок `errors`.
+2. **Игнорирование ошибок** — если промис падает в `catch`, записываем его ошибку в массив по индексу и инкрементируем счётчик.
+3. **Быстрый успех или финальный сбой** — первый успешный промис немедленно вызывает `resolve()`. Если абсолютно все промисы упали, срабатывает условие `rejectedCount === N` и вызывается `reject(new AggregateError(...))`.
+
+**Связь resolve/reject с .then/.catch:**
+> Любой первый успешный промис вызывает `resolve(value)`, фиксируя успешное состояние. Внутренний `reject` вызывается только если счётчик ошибок достигает N. При этом создаётся объект `AggregateError`, содержащий все накопленные ошибки. Навешенный `.catch()` сработает только при тотальном сбое.
+
+**Big O:**
+- Время: `O(N)` — подписка на промисы
+- Память: `O(N)` — для хранения ошибок всех промисов на случай общего сбоя
+
+**Когда использовать:** резервные источники — попробуй сервер A, B, C — возьми ответ самого быстрого живого.
+
+**Отличие от race:**
+| | `race` | `any` |
+|---|---|---|
+| Реагирует на | Первый любой (успех **или** ошибку) | Первый успешный |
+| При всех reject | reject с первой ошибкой | reject с `AggregateError` |
+
+---
+
+## ⚫ new Promise() — конструктор
+
+Ручное создание промиса. Внутрь передаётся функция-executor с двумя колбэками: `resolve` (успех) и `reject` (ошибка). Executor запускается **синхронно**.
+
+```typescript
+const myPromise = new Promise((resolve, reject) => {
+  // Этот код выполняется СИНХРОННО прямо сейчас
+
+  setTimeout(() => {
+    const success = Math.random() > 0.3
+    if (success) {
+      resolve("Готово!")
+    } else {
+      reject("Что-то пошло не так")
+    }
+  }, 1000)
+})
+```
+
+**Практический пример — обёртка setTimeout:**
+
+```typescript
+const wait = (ms: number) => {
+  return new Promise<void>((resolve, reject) => {
+    if (ms < 0) return reject(new Error("Некорректное время"));
+    setTimeout(() => {
+      resolve(); // сигнализирует об успешном завершении
+    }, ms);
+  });
+};
+```
+
+**Пошаговый алгоритм:**
+1. **Запуск executor-а** — колбэк, переданный в `new Promise`, выполняется немедленно и синхронно. Асинхронным является только разрешение промиса в будущем.
+2. **Связь с Promise.resolve/reject** — вызов `resolve(val)` ведёт себя аналогично `Promise.resolve(val)` (если `val` не является промисом). Вызов `reject(err)` — аналогично `Promise.reject(err)`.
+3. **Связь с .then/.catch** — как только вызван один из колбэков, среда выполнения планирует запуск соответствующих методов-слушателей в очереди микрозадач.
+
+**Связь resolve/reject с .then/.catch:**
+> `resolve` и `reject` — это системные функции JavaScript, передаваемые в executor. Вызов `resolve(x)` переводит состояние из `pending` в `fulfilled` и вызывает обработчики `.then()`. Вызов `reject(e)` переводит его в `rejected` и активирует цепочку `.catch()`. Вызов `.finally()` сработает при любом исходе после очистки текущей микрозадачи.
+
+**Big O:**
+- Время: `O(1)` — создание экземпляра промиса
+- Память: `O(1)` — выделение памяти под внутреннее состояние
+
+**Когда использовать:** когда нужно обернуть callback-based API (`setTimeout`, `XMLHttpRequest`, `fs.readFile`) в промис.
+
+---
+
+## 🟢 Promise.resolve / Promise.reject
+
+`Promise.resolve(value)` создаёт уже выполненный промис. `Promise.reject(reason)` — уже отклонённый.
+
+```typescript
+// Уже выполненный промис:
+const p1 = Promise.resolve(42)
+await p1 // → 42 (мгновенно)
+
+// Уже отклонённый промис:
+const p2 = Promise.reject(new Error("fail"))
+await p2 // → throws Error("fail")
+
+// Идемпотентность:
+Promise.resolve(p1) === p1 // true (тот же объект)
+```
+
+**Эквиваленты через конструктор:**
+
+```typescript
+const myResolve = (value) => new Promise((resolve) => resolve(value));
+const myReject = (reason) => new Promise((_, reject) => reject(reason));
+
+// Проверка идемпотентности:
+const original = Promise.resolve(10);
+console.log(Promise.resolve(original) === original); // true
+```
+
+**Пошаговый алгоритм:**
+1. **Прямой переход** — промис создаётся сразу в состоянии `fulfilled` или `rejected` без нахождения в состоянии `pending`.
+2. **Идемпотентность** — если передать промис в `Promise.resolve()`, он возвращается как есть. Это полезно, чтобы гарантировать, что переменная является промисом, не создавая лишних обёрток.
+
+**Связь resolve/reject с .then/.catch:**
+> `Promise.resolve(val)` — это короткая запись для `new Promise(r => r(val))`, за исключением того, что если `val` уже является промисом, `Promise.resolve` вернёт его без изменений (идемпотентность). Они напрямую переходят в `fulfilled/rejected` и запускают `.then()/.catch()` в следующей микрозадаче.
+
+**Big O:**
+- Время: `O(1)` — создание предрешённого промиса
+- Память: `O(1)` — константная память
+
+---
+
+## 🔗 .then / .catch / .finally — методы экземпляра
+
+Методы экземпляра промиса. `.then(onFulfilled, onRejected)` — обрабатывает успех/ошибку. `.catch(onRejected)` — только ошибки. `.finally(fn)` — выполняется всегда.
+
+```typescript
+fetch("/api/user")
+  .then(res => res.json())      // парсим JSON
+  .then(user => user.name)      // берём имя
+  .catch(err => "Гость")        // при ошибке — дефолт
+  .finally(() => setLoading(false)) // всегда
+```
+
+**Имитация создания нового промиса в цепочке:**
+
+```typescript
+const myThen = (onFulfilled) => {
+  return new Promise((resolve, reject) => {
+    // При успехе текущего промиса вызывается onFulfilled:
+    try {
+      const result = onFulfilled(currentValue);
+      resolve(result); // возвращаем новый выполненный промис
+    } catch (err) {
+      reject(err); // если упало — новый промис отклонён
+    }
+  });
+};
+```
+
+**Пошаговый алгоритм:**
+1. **Создание нового промиса** — каждый вызов `.then()`, `.catch()`, `.finally()` возвращает новый промис. Это позволяет строить последовательные цепочки асинхронных шагов.
+2. **Перехват ошибок с помощью .catch** — `.catch(fn)` эквивалентен `.then(null, fn)`. Он ловит ошибку на любом предыдущем шаге цепочки, если она не была обработана ранее.
+3. **Нейтральный .finally** — функция в `.finally` не принимает аргументов и её возвращаемое значение игнорируется (если она не бросает ошибку), позволяя пробросить результат цепочки далее.
+
+**Связь resolve/reject с .then/.catch:**
+> Каждый вызов `.then()` или `.catch()` создаёт новый промис и возвращает его. Если колбэк внутри возвращает обычное значение, созданный промис переходит в `fulfilled(значение)`. Если возвращает промис — перенимает его состояние. Если выбрасывает исключение `throw` — автоматически вызывает `reject(error)`. Метод `.finally(fn)` пропускает исходное значение дальше, не изменяя его.
+
+**Big O:**
+- Время: `O(M)` — где M это длина цепочки вызовов
+- Память: `O(M)` — каждый вызов `.then/.catch` возвращает новый промис
+
+**Важный нюанс — `.then(onF, onR)` vs `.then(onF).catch(onR)`:**
+
+```typescript
+// Вариант А: два колбэка в .then()
+promise.then(onFulfilled, onRejected)
+// onRejected ловит только ошибки из САМОГО ПРОМИСА
+
+// Вариант Б: .then().catch()
+promise.then(onFulfilled).catch(onRejected)
+// onRejected ловит ошибки из промиса И из onFulfilled!
+```
+
+---
+
+## 📊 Сводная таблица всех методов
+
+| Метод | Ждёт | Результат при успехе | Результат при ошибке | Когда использовать |
+|---|---|---|---|---|
+| `Promise.all` | Всех | `[val1, val2, ...]` | reject с первой ошибкой | Нужны все данные |
+| `Promise.allSettled` | Всех | `[{status, value/reason}]` | Никогда не reject | Нужны все попытки |
+| `Promise.race` | Первого (любого) | Первое значение | Первая ошибка | Таймаут |
+| `Promise.any` | Первого успешного | Первое значение | `AggregateError` | Резервные источники |
+| `Promise.resolve` | — | Готовый fulfilled | — | Обернуть значение |
+| `Promise.reject` | — | — | Готовый rejected | Тесты, заглушки |
+| `new Promise()` | Вручную | Через `resolve(val)` | Через `reject(err)` | Обернуть callback API |
+
+---
+
+## ⚠️ Граничные случаи всех методов
+
+```typescript
+Promise.all([])         // → resolve([]) синхронно
+Promise.allSettled([])  // → resolve([]) синхронно
+Promise.race([])        // → pending навсегда (никогда не resolve!)
+Promise.any([])         // → AggregateError немедленно
+
+Promise.resolve(somePromise)   // → тот же промис (идемпотентен)
+Promise.all([1, "str", true])  // числа/строки оборачиваются через Promise.resolve()
+```
+
+---
+
+## 🔗 Аналогии из жизни
+
+| Метод | Аналогия |
+|---|---|
+| `Promise.all` | Сдал 3 вещи в химчистку, жди пока все готовы. Одна потерялась — никто ничего не отдаёт |
+| `Promise.allSettled` | Отправил 3 письма. Жди ответа на все — пришёл ли ответ или «не доставлено» |
+| `Promise.race` | Несёшь ноутбук в 3 сервисных центра. Кто первый позвонит — к тому и едешь |
+| `Promise.any` | Спрашиваешь у 3 друзей дорогу. Первый, кто знает — отвечает. Незнание одного ничего не значит |
+| `new Promise()` | Сам пишешь квитанцию и сам решаешь когда написать «готово» или «ошибка» |
+
+---
+
+## 🎯 onFulfilled и onRejected — колбэки внутри .then()
+
+### Что это такое
+
+`onFulfilled` и `onRejected` — два необязательных колбэка, которые передаются в `.then()`:
+
+```javascript
+promise.then(onFulfilled, onRejected)
+```
+
+| Колбэк | Когда вызывается | Что получает |
+|---|---|---|
+| `onFulfilled` | Промис выполнен (fulfilled) | Значение из `resolve(value)` |
+| `onRejected` | Промис отклонён (rejected) | Причина из `reject(reason)` |
+
+Оба необязательны. Можно передать только один:
+
+```javascript
+promise.then(onFulfilled)          // только успех
+promise.then(null, onRejected)     // только ошибка (= .catch)
+promise.then(onFulfilled, onRejected) // оба случая
+```
+
+---
+
+### Что возвращает .then()
+
+`.then()` **всегда возвращает новый промис**. Его состояние зависит от того, что произошло внутри колбэка:
+
+```javascript
+// 1. Колбэк вернул обычное значение → новый промис fulfilled(значение)
+promise.then(val => val * 2)
+// если promise → 5, новый промис → 10
+
+// 2. Колбэк вернул промис → новый промис "перенимает" его состояние
+promise.then(val => fetch('/api/data'))
+// новый промис ждёт fetch, потом принимает его результат
+
+// 3. Колбэк бросил ошибку → новый промис rejected(ошибка)
+promise.then(val => { throw new Error('упс') })
+// новый промис → rejected('упс')
+
+// 4. Колбэк не передан (null/undefined/пустой вызов) → значение/ошибка проходит насквозь
+promise.then() 
+// новый промис = копия исходного по значению/состоянию
+```
+
+#### ❓ Можно ли ничего не передавать в `.then()`?
+
+**Да, абсолютно.** Вызов `promise.then()` без аргументов (или `promise.then(null, null)`) полностью валиден. В этом случае происходит **проброс значения (pass-through)**:
+
+```javascript
+// Значение проходит насквозь:
+Promise.resolve(42)
+  .then() // ничего не передали
+  .then(val => console.log(val)) // выведет: 42
+
+// Ошибка проходит насквозь:
+Promise.reject("ошибка")
+  .then() // ничего не передали
+  .catch(err => console.log(err)) // выведет: "ошибка"
+```
+
+**Как это работает внутри JS:**
+Если аргумент не является функцией, JS-движок негласно подставляет дефолтные заглушки:
+* Вместо отсутствующего `onFulfilled`: `value => value` (возвращает значение как есть).
+* Вместо отсутствующего `onRejected`: `reason => { throw reason; }` (пробрасывает ошибку дальше).
+
+---
+
+### Пошаговый пример
+
+```javascript
+Promise.resolve(1)
+  .then(val => val + 1)      // onFulfilled: 1 → 2
+  .then(val => val * 3)      // onFulfilled: 2 → 6
+  .then(val => {
+    throw new Error('сбой') // бросаем ошибку
+  })
+  .then(
+    val => console.log('успех:', val),   // onFulfilled — НЕ вызовется
+    err => console.log('ошибка:', err),  // onRejected — вызовется с Error('сбой')
+  )
+```
+
+---
+
+### Ключевое отличие: `.then(onF, onR)` vs `.then(onF).catch(onR)`
+
+Это самый частый источник ошибок:
+
+```javascript
+// Вариант А
+promise.then(onFulfilled, onRejected)
+```
+
+`onRejected` поймает ошибки только из **исходного `promise`**.  
+Если ошибка возникнет внутри `onFulfilled` — она НЕ попадёт в `onRejected`.
+
+```javascript
+// Вариант Б
+promise.then(onFulfilled).catch(onRejected)
+```
+
+`onRejected` (через `.catch`) поймает ошибки из **исходного промиса** И из **`onFulfilled`**.
+
+**Наглядно:**
+
+```javascript
+const p = Promise.resolve('ok')
+
+// Вариант А — onRejected НЕ сработает на ошибку внутри onFulfilled:
+p.then(
+  val => { throw new Error('ошибка в onFulfilled') },
+  err => console.log('поймал:', err)  // НЕ вызовется!
+)
+// Необработанная ошибка улетит дальше по цепочке
+
+// Вариант Б — catch поймает всё:
+p.then(val => { throw new Error('ошибка в onFulfilled') })
+ .catch(err => console.log('поймал:', err))  // ✅ вызовется
+```
+
+**Когда использовать Вариант А:**  
+Внутри `Promise.all`, когда хочешь поймать ошибки только из конкретного промиса, но не из обработчика.
+
+**Когда использовать Вариант Б:**  
+В большинстве пользовательского кода — `.catch()` в конце цепочки как общий обработчик ошибок.
+
+---
+
+### Пропуск (pass-through) — если колбэк не передан
+
+Если `onFulfilled` или `onRejected` не переданы (или переданы `null`/`undefined`), значение или ошибка **проходят сквозь** `.then()` к следующему звену цепочки:
+
+```javascript
+Promise.resolve(42)
+  .then(null, null)       // нет колбэков → 42 проходит насквозь
+  .then(val => val + 1)   // val = 42, результат = 43
+
+Promise.reject('ошибка')
+  .then(val => val)       // onFulfilled есть, но rejected → пропускается
+  .catch(err => err)      // ловит 'ошибка'
+```
+
+Именно так работает `.catch(fn)` — это просто `.then(null, fn)` под капотом.
+
+---
+
+### Связь с очередью микрозадач
+
+Колбэки `onFulfilled` и `onRejected` **никогда не вызываются синхронно**, даже если промис уже settled:
+
+```javascript
+const p = Promise.resolve('готово')
+
+p.then(val => console.log('2:', val)) // запланировано в microtask queue
+
+console.log('1: синхронно')
+
+// Вывод:
+// 1: синхронно
+// 2: готово
+```
+
+Это гарантия спецификации — `.then()` всегда асинхронен. Каждый `onFulfilled`/`onRejected` добавляется в очередь микрозадач и выполняется после завершения текущего синхронного кода.

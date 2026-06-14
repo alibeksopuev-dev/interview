@@ -8,6 +8,9 @@ import { EventLoopShowcase } from './showcases/EventLoopShowcase/EventLoopShowca
 import { ObserversShowcase } from './showcases/ObserversShowcase/ObserversShowcase'
 import { BrowserMetricsShowcase } from './showcases/BrowserMetricsShowcase/BrowserMetricsShowcase'
 import { GraphicsShowcase } from './showcases/GraphicsShowcase/GraphicsShowcase'
+import { BigOShowcase } from './showcases/BigOShowcase/BigOShowcase'
+import { AlgoShowcase } from './showcases/AlgoShowcase/AlgoShowcase'
+import { PromiseShowcase } from './showcases/PromiseShowcase/PromiseShowcase'
 
 const NAV_ITEMS = [
   { to: '/data-table', label: 'DataTable', badge: 'Generic' },
@@ -18,6 +21,9 @@ const NAV_ITEMS = [
   { to: '/observers', label: 'Observers', badge: 'DOM' },
   { to: '/browser-metrics', label: 'Browser Metrics', badge: 'Coords' },
   { to: '/graphics', label: 'Graphics', badge: 'Canvas' },
+  { to: '/big-o', label: 'Big O', badge: 'Algo' },
+  { to: '/algo', label: 'Algorithms', badge: 'DS&A' },
+  { to: '/promise', label: 'Promise API', badge: 'Async' },
 ]
 
 export default function App() {
@@ -117,6 +123,30 @@ export default function App() {
             element={
               <div className='page-content'>
                 <GraphicsShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/big-o'
+            element={
+              <div className='page-content'>
+                <BigOShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/algo'
+            element={
+              <div className='page-content'>
+                <AlgoShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/promise'
+            element={
+              <div className='page-content'>
+                <PromiseShowcase />
               </div>
             }
           />
