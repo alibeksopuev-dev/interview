@@ -182,8 +182,8 @@ export default function deepEqual(valueA: unknown, valueB: unknown): boolean {
 В коде есть строки:
 
 ```typescript
-const comparableA = valueA as Record<string, unknown>
-const comparableB = valueB as Record<string, unknown>
+const comparableA = valueA as Record<string, unknown>;
+const comparableB = valueB as Record<string, unknown>;
 ```
 
 Эти строки нужны **только для TypeScript** (на работу JS не влияют).
@@ -195,6 +195,11 @@ const comparableB = valueB as Record<string, unknown>
 `as Record<string, unknown>` — это наша "клятва" компилятору: _"Я проверил, относись к этой переменной как к словарю
 (объекту), у которого ключи — строки, а значения неизвестны"_. Это позволяет нам использовать обращение
 `comparableA[key]` без красных подчёркиваний.
+
+> [!NOTE]
+> Попытка привести типы к объединению `Record<string, unknown> | Array<unknown>` приведёт к ошибке компиляции TypeScript:
+> *`Element implicitly has an 'any' type because expression of type 'string' can't be used to index type...`*
+> Это происходит потому, что тип `Array<unknown>` (массив) не имеет строковой сигнатуры индекса (string index signature), в отличие от `Record<string, unknown>`. Поскольку в JS массивы являются объектами и поддерживают обращение по строковым индексам (например, `arr['0']`), приведение к `Record<string, unknown>` является самым простым и безопасным решением для обхода свойств в цикле.
 
 ---
 
@@ -247,7 +252,36 @@ return entriesA.every(([key, value]) => Object.hasOwn(valueB, key) && deepEqualA
 
 ---
 
-## ⚠️ 5. Edge Cases (Граничные случаи)
+## 🚀 5. Анализ улучшений в доработанной версии
+
+В новой и более совершенной версии алгоритма были исправлены критические логические ошибки и улучшена система типов:
+
+### 1. Поддержка разреженных массивов (Sparse Arrays)
+* **Проблема**: Метод `Object.keys()` возвращает только фактически существующие (перечисляемые) индексы. Если массив разреженный (например, `[, ,]`), то `Object.keys()` для него вернет пустой массив `[]` (длина `0`). Без дополнительной проверки разреженный массив `[, ,]` ошибочно считался равным пустому массиву `[]`, так как у обоих `Object.keys().length === 0`.
+* **Решение**: Добавлено явное сравнение длины массивов `(valueA as Array<unknown>).length !== (valueB as Array<unknown>).length` перед перебором ключей. Теперь разреженные массивы разной длины корректно определяются как неравные.
+
+### 2. Защита от ложных совпадений свойств со значением `undefined`
+* **Проблема**: В предыдущей версии обход ключей выполнялся по циклу:
+  ```typescript
+  for (const key in comparableA) {
+    if (!deepEqual(comparableA[key], comparableB[key])) { return false; }
+  }
+  ```
+  Если `valueA` имело вид `{ a: undefined }`, а `valueB` имело вид `{ b: undefined }`, то:
+  1. Длина ключей у них одинаковая (1).
+  2. В цикле для `key = 'a'` вызывалось `deepEqual(valueA.a, valueB.a)`.
+  3. Поскольку `valueB.a` отсутствует, оно возвращало `undefined`.
+  4. Сравнение `deepEqual(undefined, undefined)` возвращало `true`.
+  5. Объекты ошибочно признавались равными, несмотря на совершенно разные ключи (`a` и `b`).
+* **Решение**: Внедрена проверка `Object.hasOwn(comparableB, key)`. Если во втором объекте физически отсутствует проверяемый ключ первого объекта, алгоритм сразу возвращает `false`.
+
+### 3. Типизация в TypeScript и решение проблемы индексации
+* **Проблема**: В JavaScript массивы и объекты под капотом являются объектами со строковыми ключами. Однако в TypeScript тип `Array<unknown>` не имеет сигнатуры индекса для типа `string`. Попытка привести переменные к объединению `Record<string, unknown> | Array<unknown>` вызывает ошибку при обращении `comparableA[key]`, так как TypeScript не может гарантировать безопасность строкового индекса для массива.
+* **Решение**: Приведение типов выполняется к `Record<string, unknown>`. Это полностью решает проблему с типом `any` при обращении по строковому ключу и позволяет использовать единый цикл `for...in` как для объектов, так и для массивов.
+
+---
+
+## ⚠️ 6. Edge Cases (Граничные случаи)
 
 При реализации такого простого обхода нужно помнить о его ограничениях:
 
@@ -264,11 +298,11 @@ return entriesA.every(([key, value]) => Object.hasOwn(valueB, key) && deepEqualA
 
 ---
 
-## 📐 Итоговая карточка
+## 📐 7. Итоговая карточка
 
 ```
 ┌─────────────────────────────────────────────┐
-│    deepEqual (Primitives First): Big O      │
+│    deepEqual (Refined version): Big O       │
 ├─────────────────────────┬───────────────────┤
 │  Временная сложность    │    O(N)            │
 │  Пространственная       │    O(D)            │

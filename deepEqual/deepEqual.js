@@ -23,7 +23,7 @@ exports.deepEqual = void 0;
  * deepEqual([1, 2, 3], [1, 2, 3]); // true
  * deepEqual([{ id: '1' }], [{ id: '2' }]); // false
  */
-const deepEqual = (valueA, valueB) => {
+function deepEqual(valueA, valueB) {
     // 1. БАЗОВЫЙ СЛУЧАЙ (Base Case): Проверка примитивов и одинаковых ссылок.
     // Если значения абсолютно идентичны (включая ссылки на один и тот же объект), мы сразу возвращаем true.
     // Object.is идеально подходит:
@@ -45,34 +45,45 @@ const deepEqual = (valueA, valueB) => {
     // Но если бы у них было одинаковое значение, мы бы вышли на проверке Object.is().
     // Таким образом, если они оба не являются объектами или оба не массивами
     // (например: строка и число, объект и null), то они совершенно точно не равны.
-    // условие буквально переводится так: "Если это НЕ два объекта И это НЕ два массива —
+    // Условие буквально переводится так: "Если это НЕ два объекта И это НЕ два массива —
     // значит, сравнивать тут больше нечего, они точно разные".
     if (!bothObjects && !bothArrays) {
         return false;
     }
-    // Приводим к типу Record, чтобы TypeScript разрешил доступ по ключам/индексам строк.
     const comparableA = valueA;
     const comparableB = valueB;
-    // 4. СРАВНЕНИЕ ДЛИНЫ:
+    // 4. СРАВНЕНИЕ ДЛИНЫ РАЗРЕЖЕННЫХ МАССИВОВ (Sparse Arrays):
+    // Разреженные массивы могут иметь длину (length) больше, чем количество возвращаемых Object.keys() ключей.
+    // Например, [, ,] имеет length = 2, но Object.keys() вернёт пустой массив.
+    // Сравниваем длины массивов напрямую перед проверкой ключей.
+    if (bothArrays && valueA.length !== valueB.length) {
+        return false;
+    }
+    // 5. СРАВНЕНИЕ КОЛИЧЕСТВА КЛЮЧЕЙ:
     // Object.keys работает как для объектов (возвращает ключи), так и для массивов (возвращает индексы).
     // Если количество свойств не совпадает, то массивы/объекты точно не равны.
     if (Object.keys(comparableA).length !== Object.keys(comparableB).length) {
         return false;
     }
-    // 5. РЕКУРСИВНЫЙ ОБХОД (Recursive Step):
+    // 6. РЕКУРСИВНЫЙ ОБХОД (Recursive Step):
     // Проходимся по всем перечисляемым ключам (или индексам) в первом объекте.
     for (const key in comparableA) {
         // Мы рекурсивно вызываем deepEqual для значений по текущему ключу.
         // Если хотя бы одно вложенное значение отличается, прерываем цикл (ранний выход).
-        // Примечание: если key есть в A, но нет в B, comparableB[key] даст undefined.
-        // Затем Object.is() на следующем уровне рекурсии вернет false.
-        if (!deepEqual(comparableA[key], comparableB[key])) {
+        //
+        // Важно: проверяем наличие ключа с помощью Object.hasOwn(comparableB, key).
+        // Иначе `{ foo: undefined }` вернёт true при сравнении с `{ bar: undefined }`,
+        // так как comparableB.foo вернёт undefined (когда свойства 'foo' нет на comparableB),
+        // а Object.keys().length у них равен.
+        if (!Object.hasOwn(comparableB, key) ||
+            !deepEqual(comparableA[key], comparableB[key])) {
             return false;
         }
     }
-    // 6. Если мы прошли все проверки и цикл завершился — массивы/объекты полностью равны.
+    // Все проверки пройдены, массивы/объекты равны.
     return true;
-};
+}
+exports.default = deepEqual;
 exports.deepEqual = deepEqual;
 // ── Тесты ──────────────────────────────────────────────────────────────────
 console.log(deepEqual('foo', 'foo')); // true
@@ -82,6 +93,11 @@ console.log(deepEqual([{ id: '1' }], [{ id: '2' }])); // false
 console.log(deepEqual({ a: 1, b: 2 }, { b: 2, a: 1 })); // true
 console.log(deepEqual(null, null)); // true
 console.log(deepEqual(NaN, NaN)); // true
+// Дополнительные тесты на новые граничные случаи:
+console.log(deepEqual([, ,], [])); // false (разреженные массивы разной длины)
+console.log(deepEqual([1, , 3], [1, 3])); // false (разреженный vs обычный)
+console.log(deepEqual({ a: undefined }, { b: undefined })); // false (разные свойства со значением undefined)
+console.log(deepEqual({ a: undefined }, { a: undefined })); // true (одинаковые свойства со значением undefined)
 // ============================================================================
 // ❌ АЛЬТЕРНАТИВНЫЙ (ХУДШИЙ) ВАРИАНТ: Approach 1 (Сначала объекты)
 // ============================================================================
