@@ -11,6 +11,7 @@ import { GraphicsShowcase } from './showcases/GraphicsShowcase/GraphicsShowcase'
 import { BigOShowcase } from './showcases/BigOShowcase/BigOShowcase'
 import { AlgoShowcase } from './showcases/AlgoShowcase/AlgoShowcase'
 import { PromiseShowcase } from './showcases/PromiseShowcase/PromiseShowcase'
+import { RefactorShowcase } from './showcases/RefactorShowcase/RefactorShowcase'
 
 const NAV_ITEMS = [
   { to: '/data-table', label: 'DataTable', badge: 'Generic' },
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { to: '/big-o', label: 'Big O', badge: 'Algo' },
   { to: '/algo', label: 'Algorithms', badge: 'DS&A' },
   { to: '/promise', label: 'Promise API', badge: 'Async' },
+  { to: '/refactor', label: 'Refactor', badge: 'Trainer' },
 ]
 
 export default function App() {
@@ -147,6 +149,14 @@ export default function App() {
             element={
               <div className='page-content'>
                 <PromiseShowcase />
+              </div>
+            }
+          />
+          <Route
+            path='/refactor'
+            element={
+              <div className='page-content'>
+                <RefactorShowcase />
               </div>
             }
           />
