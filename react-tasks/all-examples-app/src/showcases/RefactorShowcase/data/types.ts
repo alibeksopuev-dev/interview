@@ -9,6 +9,7 @@ export type Category =
   | 'memory-leak'
   | 'a11y'
   | 'patterns'
+  | 'react-19'
 
 export interface Bug {
   /** Короткое название проблемы */
@@ -43,4 +44,5 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   'memory-leak': 'Memory Leak',
   a11y: 'A11y',
   patterns: 'Patterns',
+  'react-19': 'React 19',
 }

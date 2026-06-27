@@ -181,6 +181,11 @@
   border-radius: 6px;
 }
 
+.rf-cat-r19 {
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+}
+
 .rf-card-brief {
   margin: 0 0 16px;
   font-size: 14px;

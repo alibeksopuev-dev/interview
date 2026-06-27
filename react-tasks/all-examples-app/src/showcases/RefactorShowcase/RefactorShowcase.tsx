@@ -1,8 +1,11 @@
 import { FC, useMemo, useState } from 'react'
 import './styles.css'
 import { REFACTOR_TASKS } from './data/tasks'
+import { TS_TASKS } from './data/tsTasks'
 import { CATEGORY_LABELS, Category, Level } from './data/types'
 import { TaskCard } from './components/TaskCard'
+
+const ALL_TASKS = [...REFACTOR_TASKS, ...TS_TASKS]
 
 type LevelFilter = Level | 'all'
 type CategoryFilter = Category | 'all'
@@ -13,7 +16,7 @@ export const RefactorShowcase: FC = () => {
 
   const visibleTasks = useMemo(
     () =>
-      REFACTOR_TASKS.filter(t => {
+      ALL_TASKS.filter(t => {
         const byLevel = level === 'all' || t.level === level
         const byCat = category === 'all' || t.categories.includes(category)
         return byLevel && byCat
@@ -23,7 +26,7 @@ export const RefactorShowcase: FC = () => {
 
   const usedCategories = useMemo(() => {
     const set = new Set<Category>()
-    REFACTOR_TASKS.forEach(t => t.categories.forEach(c => set.add(c)))
+    ALL_TASKS.forEach(t => t.categories.forEach(c => set.add(c)))
     return [...set]
   }, [])
 
@@ -32,7 +35,7 @@ export const RefactorShowcase: FC = () => {
       <header className='rf-header'>
         <h1 className='rf-title'>Тренажёр рефакторинга · React + TypeScript</h1>
         <p className='rf-subtitle'>
-          {REFACTOR_TASKS.length} задач с реальными ошибками уровня middle/senior:
+          {ALL_TASKS.length} задач с реальными ошибками уровня middle/senior:
           хуки, гонки запросов, мемоизация, типизация, утечки и контекст. Изучи
           «грязный» код, найди баги самостоятельно — затем раскрой подробный разбор
           и эталонный рефакторинг.
@@ -74,7 +77,7 @@ export const RefactorShowcase: FC = () => {
       </div>
 
       <div className='rf-count'>
-        Показано: {visibleTasks.length} из {REFACTOR_TASKS.length}
+        Показано: {visibleTasks.length} из {ALL_TASKS.length}
       </div>
 
       <div className='rf-list'>

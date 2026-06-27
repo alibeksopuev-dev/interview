@@ -20,7 +20,12 @@ export const TaskCard: FC<TaskCardProps> = ({ task, index }) => {
         <div className='rf-card-tags'>
           <span className={`rf-level rf-level-${task.level}`}>{task.level}</span>
           {task.categories.map(c => (
-            <span key={c} className='rf-cat'>{CATEGORY_LABELS[c]}</span>
+            <span
+              key={c}
+              className={`rf-cat${c === 'react-19' ? ' rf-cat-r19' : ''}`}
+            >
+              {CATEGORY_LABELS[c]}
+            </span>
           ))}
         </div>
       </header>
