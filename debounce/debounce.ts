@@ -4,7 +4,7 @@
 
 // T extends (...args: any[]) => any — T должен быть функцией,
 // иначе Parameters<T> не скомпилируется
-export function debounceV1<T extends (...args: any[]) => any>(
+function debounceV1<T extends (...args: any[]) => any>(
   func: T, // T — конкретный тип переданной функции, TS выведет его автоматически
   wait: number = 0,
 ): (...args: Parameters<T>) => void {
@@ -33,7 +33,7 @@ export function debounceV1<T extends (...args: any[]) => any>(
   }
 }
 
-export function debounce1<T extends (...args: any[]) => any>(
+function debounce1<T extends (...args: any[]) => any>(
   func: T,
   wait: number = 0,
 ): (...args: Parameters<T>) => void {
@@ -50,7 +50,7 @@ export function debounce1<T extends (...args: any[]) => any>(
   }
 }
 
-export function debounce2<T extends (...args: any[]) => any>(
+function debounce2<T extends (...args: any[]) => any>(
   func: T,
   wait: number = 0,
 ): (...args: Parameters<T>) => void {
@@ -69,7 +69,7 @@ export function debounce2<T extends (...args: any[]) => any>(
 // =================================================================
 // РЕШЕНИЕ 2: обычная function + стрелочная функция внутри setTimeout
 // =================================================================
-export function debounceV2<T extends (...args: any[]) => any>(
+function debounceV2<T extends (...args: any[]) => any>(
   func: T,
   wait: number = 0,
 ): (...args: Parameters<T>) => void {
@@ -90,7 +90,7 @@ export function debounceV2<T extends (...args: any[]) => any>(
 // =================================================================
 // РЕШЕНИЕ 3: стрелочная функция + стрелочная функция внутри setTimeout
 // =================================================================
-export const debounce3 = <T extends (...args: any[]) => any>(
+const debounce3 = <T extends (...args: any[]) => any>(
   func: T,
   wait: number = 0,
 ): ((...args: Parameters<T>) => void) => {
@@ -105,4 +105,22 @@ export const debounce3 = <T extends (...args: any[]) => any>(
       func.apply(this, args)
     }, wait)
   }
+}
+
+type AnyFunction = (this: any, ...args: any[]) => any;
+
+function debounce4<T extends AnyFunction>(
+  func: T,
+  wait: number = 0,
+): (this: ThisParameterType<T>, ...args: Parameters<T>) => void {
+  let timeoutID: ReturnType<typeof setTimeout> | null = null;
+
+  return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
+    clearTimeout(timeoutID ?? undefined);
+
+    timeoutID = setTimeout(() => {
+      timeoutID = null; 
+      func.apply(this, args);
+    }, wait);
+  };
 }

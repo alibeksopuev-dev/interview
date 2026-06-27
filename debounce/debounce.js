@@ -3,7 +3,6 @@
 // РЕШЕНИЕ 1: обычная function + сохраняем this в переменную context
 // =================================================================
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debounce3 = exports.debounceV2 = exports.debounce2 = exports.debounce1 = exports.debounceV1 = void 0;
 // T extends (...args: any[]) => any — T должен быть функцией,
 // иначе Parameters<T> не скомпилируется
 function debounceV1(func, // T — конкретный тип переданной функции, TS выведет его автоматически
@@ -28,7 +27,6 @@ wait = 0) {
         }, wait);
     };
 }
-exports.debounceV1 = debounceV1;
 function debounce1(func, wait = 0) {
     let timeoutID = null;
     return function (...args) {
@@ -40,7 +38,6 @@ function debounce1(func, wait = 0) {
         }, wait);
     };
 }
-exports.debounce1 = debounce1;
 function debounce2(func, wait = 0) {
     let timeoutID = null;
     return function (...args) {
@@ -51,7 +48,6 @@ function debounce2(func, wait = 0) {
         }, wait);
     };
 }
-exports.debounce2 = debounce2;
 // =================================================================
 // РЕШЕНИЕ 2: обычная function + стрелочная функция внутри setTimeout
 // =================================================================
@@ -67,7 +63,6 @@ function debounceV2(func, wait = 0) {
         }, wait);
     };
 }
-exports.debounceV2 = debounceV2;
 // =================================================================
 // РЕШЕНИЕ 3: стрелочная функция + стрелочная функция внутри setTimeout
 // =================================================================
@@ -82,4 +77,13 @@ const debounce3 = (func, wait = 0) => {
         }, wait);
     };
 };
-exports.debounce3 = debounce3;
+function debounce4(func, wait = 0) {
+    let timeoutID = null;
+    return function (...args) {
+        clearTimeout(timeoutID ?? undefined);
+        timeoutID = setTimeout(() => {
+            timeoutID = null;
+            func.apply(this, args);
+        }, wait);
+    };
+}

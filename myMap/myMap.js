@@ -14,9 +14,9 @@ Array.prototype.myMap = function (callbackFn, thisArg) {
     return array;
 };
 // ── Тесты ──────────────────────────────────────────────────────────────────
-const doubled = [1, 2, 3].myMap((x) => x * 2);
+const doubled = [1, 2, 3].myMap(x => x * 2);
 console.log(doubled); // [2, 4, 6]
-const strings = [1, 2, 3].myMap((x) => String(x));
+const strings = [1, 2, 3].myMap(x => String(x));
 console.log(strings); // ['1', '2', '3']
 // thisArg usage
 const multiplier = { factor: 3 };
@@ -25,6 +25,6 @@ const tripled = [1, 2, 3].myMap(function (x) {
 }, multiplier);
 console.log(tripled); // [3, 6, 9]
 // Sparse array: holes should be preserved
-const sparse = [1, , 3].myMap((x) => x * 2);
+const sparse = [1, , 3].myMap(x => x * 2);
 console.log(sparse); // [2, empty, 6]
 console.log(Object.hasOwn(sparse, 1)); // false — hole preserved
