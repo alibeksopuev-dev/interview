@@ -305,6 +305,112 @@ function sum(a, b, c) { return a + b + c } // arity = 3
 
 ---
 
+### ✅ Вариант 4 — Точная типизация через рекурсивный тип `Curry<T>`
+
+```typescript
+type Curry<T extends (...args: any[]) => any> =
+  Parameters<T> extends [infer First, ...infer Rest]
+    ? Rest extends []
+      ? T
+      : (arg: First) => Curry<(...args: Rest) => ReturnType<T>>
+    : T
+
+export default function curry4<T extends (...args: any[]) => any>(func: T): Curry<T> {
+  function curried(this: any, ...args: any[]): any {
+    if (args.length >= func.length) {
+      return func.apply(this, args)
+    }
+    return curried.bind(this, ...args)
+  }
+  return curried as Curry<T>
+}
+```
+
+#### Разбор типа `Curry<T>` пошагово
+
+`Curry<T>` — это **условный рекурсивный тип**, который на уровне TypeScript разворачивает функцию в цепочку однострочных функций.
+
+**Строка 1 — ограничение:**
+```typescript
+type Curry<T extends (...args: any[]) => any>
+```
+`T` — это любая функция. `extends (...args: any[]) => any` — ограничение, гарантирующее что `T` именно функция.
+
+**Строка 2 — деструктуризация параметров:**
+```typescript
+Parameters<T> extends [infer First, ...infer Rest]
+```
+- `Parameters<T>` — встроенный утилитарный тип, возвращает кортеж параметров функции.  
+  Например, для `(a: number, b: string, c: boolean) => void` вернёт `[number, string, boolean]`.
+- `extends [infer First, ...infer Rest]` — паттерн-матчинг по кортежу:  
+  `First` = тип первого аргумента, `Rest` = кортеж оставшихся.
+
+**Строки 3–4 — базовый случай (остановка рекурсии):**
+```typescript
+? Rest extends []
+  ? T          // ← если аргументов больше нет — возвращаем исходный тип T
+```
+Если `Rest` — пустой кортеж `[]`, значит аргументов больше нет. Возвращаем `T` как есть — это и есть последняя функция в цепочке.
+
+**Строка 5 — рекурсивный шаг:**
+```typescript
+: (arg: First) => Curry<(...args: Rest) => ReturnType<T>>
+```
+Если аргументов ещё несколько — возвращаем функцию, которая принимает `First` и возвращает `Curry<...>` от оставшихся аргументов. Это рекурсия: тип разворачивается слой за слоем.
+
+**Строка 6 — fallback:**
+```typescript
+: T
+```
+Если `Parameters<T>` не совпал с паттерном `[infer First, ...infer Rest]` (например, `T` — функция без аргументов `() => number`), возвращаем `T` без изменений.
+
+#### Трассировка типа для `(a: number, b: string, c: boolean) => void`
+
+```
+Curry<(a: number, b: string, c: boolean) => void>
+
+Parameters<T> = [number, string, boolean]
+First = number, Rest = [string, boolean]
+Rest extends [] ? → Нет
+
+→ (arg: number) => Curry<(b: string, c: boolean) => void>
+
+  Curry<(b: string, c: boolean) => void>
+  Parameters<T> = [string, boolean]
+  First = string, Rest = [boolean]
+  Rest extends [] ? → Нет
+
+  → (arg: string) => Curry<(c: boolean) => void>
+
+    Curry<(c: boolean) => void>
+    Parameters<T> = [boolean]
+    First = boolean, Rest = []
+    Rest extends [] ? → Да
+
+    → (c: boolean) => void   (возвращаем T как есть)
+
+Итог: (arg: number) => (arg: string) => (c: boolean) => void
+```
+
+#### Что даёт такая типизация на практике
+
+```typescript
+const add = (a: number, b: number, c: number) => a + b + c
+const curriedAdd = curry4(add)
+// TypeScript знает: curriedAdd имеет тип (arg: number) => (arg: number) => (c: number) => number
+
+curriedAdd(1)        // тип: (arg: number) => (c: number) => number
+curriedAdd(1)(2)     // тип: (c: number) => number
+curriedAdd(1)(2)(3)  // тип: number ✅
+
+curriedAdd('x')      // ❌ Argument of type 'string' is not assignable to parameter of type 'number'
+curriedAdd(1)(2)(3)(4) // ❌ This expression is not callable
+```
+
+TypeScript на каждом шаге знает точный тип следующего аргумента и конечного результата — никаких `any` в публичном API.
+
+---
+
 ### 📊 Итоговое сравнение всех вариантов
 
 | Вариант | `f(a)(b)(c)` | `f(a,b)(c)` | TypeScript Generic | Контекст `this` |
@@ -313,3 +419,4 @@ function sum(a, b, c) { return a + b + c } // arity = 3
 | ⚠️ Вариант 1 (closure) | ✅ | ❌ | ❌ | ✅ |
 | ✅ Вариант 2 (bind) | ✅ | ✅ | ❌ | ✅ |
 | ✅ Вариант 3 (generic + spread) | ✅ | ✅ | ✅ | ✅ |
+| ✅ Вариант 4 (bind + точный тип) | ✅ | ✅ | ✅✅ | ✅ |
