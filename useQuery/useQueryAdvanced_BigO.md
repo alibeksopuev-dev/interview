@@ -357,3 +357,84 @@ fn().catch(() => {
 | Подписчики ревалидации | Один компонент | Все компоненты с тем же ключом |
 | Оптимистичные обновления | Нет | `setQueryData` |
 | Prefetching | Нет | `prefetchQuery` |
+
+---
+
+## Сравнение реализаций `useQueryCached` (`useQuery.ts` vs `useQueryAdvanced.ts`)
+
+Реализация в [useQueryAdvanced.ts](file:///Users/alibek/WebstormProjects/interview/react-tasks/all-examples-app/src/hooks/useQueryAdvanced.ts) является **намного более качественной и корректной**, чем в [useQuery.ts](file:///Users/alibek/WebstormProjects/interview/useQuery/useQuery.ts), по следующим причинам:
+
+### 1. Критическая логическая ошибка в `useEffect` (Лишний запрос и сброс состояния)
+В [useQuery.ts](file:///Users/alibek/WebstormProjects/interview/useQuery/useQuery.ts):
+```typescript
+  useEffect(() => {
+    if (hasCache) {
+      setState({ status: 'success', data: cached as T })
+      setFromCache(true)
+    }
+    // Внимание: нет оператора return!
+    let ignore = false
+    setState({ status: 'loading' }) // Сразу же перезаписывает стейт на loading
+    setFromCache(false)
+
+    fn() // Запрос ВСЕГДА улетает на сервер
+    // ...
+```
+**Проблема:** Даже если данные есть в кэше (`hasCache === true`), из-за отсутствия `return` код продолжает выполняться. Состояние моментально сбрасывается в `loading`, и запускается новый асинхронный запрос `fn()`. Пользователь видит мгновенное «мигание» (успех -> загрузка), а смысл кэширования теряется, так как сеть нагружается при каждом рендере.
+
+В [useQueryAdvanced.ts](file:///Users/alibek/WebstormProjects/interview/react-tasks/all-examples-app/src/hooks/useQueryAdvanced.ts) эта проблема решена с помощью **раннего выхода (early return)**:
+```typescript
+    if (cache.has(cacheKey)) {
+      setState({ status: 'success', data: cache.get(cacheKey) as T })
+      setFromCache(true)
+      return // <-- Работа эффекта прекращается, запрос fn() не выполняется!
+    }
+```
+
+### 2. Устаревание замыканий (Stale Closures)
+В [useQuery.ts](file:///Users/alibek/WebstormProjects/interview/useQuery/useQuery.ts) переменные `hasCache` и `cached` вычисляются один раз при рендере вне эффекта. Если хук вызывается повторно с измененными параметрами, но массив зависимостей эффекта (`deps`) не изменился, эффект использует старые сохраненные переменные.
+
+В [useQueryAdvanced.ts](file:///Users/alibek/WebstormProjects/interview/react-tasks/all-examples-app/src/hooks/useQueryAdvanced.ts) проверка `cache.has(cacheKey)` выполняется прямо внутри эффекта, что гарантирует использование актуального состояния глобального кэша на момент запуска эффекта.
+
+---
+
+## Объяснение типизации TypeScript в `useQueryAdvanced.ts`
+
+Файл использует строгую типизацию TypeScript для обеспечения безопасности типов при работе с асинхронными операциями и кэшем:
+
+### 1. Discriminated Union для состояния (`AsyncState<T>`)
+```typescript
+type AsyncState<T> =
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: Error }
+```
+* **Шаблон проектирования:** Размеченное объединение (Discriminated Union). Поле `status` выступает в роли дискриминанта.
+* **Польза:** Позволяет TypeScript сужать типы (Type Narrowing) в коде UI. Например, если `status === 'success'`, TS гарантирует, что свойство `data` существует и имеет тип `T`. Если `status === 'loading'`, попытка обратиться к `data` вызовет ошибку компиляции.
+
+### 2. Использование Generics (обобщений) в хуках
+Все хуки объявлены с параметром типа `<T>`:
+```typescript
+export function useQueryCached<T>(
+  cacheKey: string,
+  fn: () => Promise<T>,
+  deps: DependencyList = [],
+): AsyncState<T> & { fromCache: boolean }
+```
+* `fn: () => Promise<T>` указывает, что переданная функция должна возвращать промис с типом `T`.
+* `AsyncState<T>` связывает тип результата промиса с типом данных в стейте.
+* Возвращаемый тип объединяет состояние с дополнительными флагами через пересечение типов (`& { fromCache: boolean }`).
+
+### 3. Безопасность глобальных кэшей (`unknown`)
+```typescript
+const cache = new Map<string, unknown>()
+const inFlight = new Map<string, Promise<unknown>>()
+```
+* Глобальные карты используют `unknown`, потому что один кэш хранит данные разных типов для разных ключей.
+* Использование `unknown` (вместо `any`) заставляет разработчика явно приводить типы при извлечении данных.
+
+### 4. Приведение типов (Type Assertion) при чтении
+```typescript
+const cached = cache.get(cacheKey) as T | undefined
+```
+Поскольку тип значения в `Map` — `unknown`, мы используем оператор `as T | undefined`, чтобы сообщить компилятору: *«Мы уверены, что по этому ключу лежат данные типа `T`, либо их там нет вовсе»*. Это восстанавливает строгую типизацию для локальных переменных.
