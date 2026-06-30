@@ -406,3 +406,183 @@
   line-height: 1.65;
   color: #334155;
 }
+
+/* ── Playground / CodeRunner ──────────────────────────────────────── */
+.rf-play-section {
+  margin-bottom: 14px;
+}
+
+.rf-play-btn {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #6ee7b7;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.rf-play-btn:hover {
+  background: #d1fae5;
+  border-color: #34d399;
+}
+
+.rf-play-loading {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  background: #0f172a;
+  border-radius: 12px;
+}
+
+.rf-runner {
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.rf-runner-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #1e293b;
+}
+
+.rf-runner-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.rf-runner-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rf-runner-reset,
+.rf-runner-run {
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.rf-runner-reset {
+  background: #334155;
+  color: #cbd5e1;
+}
+
+.rf-runner-reset:hover {
+  background: #475569;
+}
+
+.rf-runner-run {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+}
+
+.rf-runner-run:hover {
+  filter: brightness(1.08);
+}
+
+.rf-runner-run:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.rf-runner-editor {
+  border-top: 1px solid #1e293b;
+}
+
+.rf-runner-output {
+  padding: 12px;
+  border-top: 1px solid #1e293b;
+  background: #0b1220;
+}
+
+.rf-runner-fatal {
+  color: #fca5a5;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  background: #450a0a;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.rf-runner-summary {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 10px;
+}
+
+.rf-runner-summary-ok {
+  color: #34d399;
+}
+
+.rf-runner-tests {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rf-runner-test {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.rf-runner-test-ok {
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+}
+
+.rf-runner-test-fail {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+
+.rf-runner-test-icon {
+  font-weight: 700;
+}
+
+.rf-runner-test-name {
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.rf-runner-test-err {
+  color: #fca5a5;
+  font-style: italic;
+}
+
+.rf-runner-console {
+  margin: 0;
+  padding: 10px 12px;
+  background: #020617;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 160px;
+  overflow-y: auto;
+}

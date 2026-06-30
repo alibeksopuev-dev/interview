@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { Sidebar } from './components/Sidebar'
 import { DataTableShowcase } from './showcases/DataTableShowcase/DataTableShowcase'
 import { ThrottleShowcase } from './showcases/ThrottleShowcase/ThrottleShowcase'
 import { UseQueryShowcase } from './showcases/UseQueryShowcase/UseQueryShowcase'
@@ -29,37 +30,17 @@ const NAV_ITEMS = [
 ]
 
 export default function App() {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
   const toggle = () => {
     setIsOpen(!isOpen)
   }
   return (
     <div className='app-layout'>
-      {isOpen ? (
-        <aside className='app-sidebar'>
-          <div className='sidebar-logo'>Interview</div>
-          <nav className='sidebar-nav'>
-            {NAV_ITEMS.map(({ to, label, badge }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `sidebar-link${isActive ? ' sidebar-link-active' : ''}`
-                }
-              >
-                <span className='sidebar-link-label'>{label}</span>
-                <span className='sidebar-link-badge'>{badge}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </aside>
-      ) : null}
-      <button
-        onClick={toggle}
-        className='toggle-button'
-      >
-        Toggle menu
-      </button>
+      <Sidebar
+        items={NAV_ITEMS}
+        isOpen={isOpen}
+        onToggle={toggle}
+      />
 
       <main className='app-main'>
         <Routes>

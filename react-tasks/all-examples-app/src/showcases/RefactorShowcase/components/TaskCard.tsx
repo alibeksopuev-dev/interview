@@ -1,6 +1,11 @@
-import { FC, useState } from 'react'
+import { FC, Suspense, lazy, useState } from 'react'
 import { RefactorTask, CATEGORY_LABELS } from '../data/types'
 import { CodeBlock } from './CodeBlock'
+
+// Monaco тяжёлый — грузим только когда открыли песочницу
+const CodeRunner = lazy(() =>
+  import('./CodeRunner').then(m => ({ default: m.CodeRunner })),
+)
 
 interface TaskCardProps {
   task: RefactorTask
@@ -9,6 +14,7 @@ interface TaskCardProps {
 
 export const TaskCard: FC<TaskCardProps> = ({ task, index }) => {
   const [revealed, setRevealed] = useState(false)
+  const [playing, setPlaying] = useState(false)
 
   return (
     <article className='rf-card'>
@@ -33,6 +39,22 @@ export const TaskCard: FC<TaskCardProps> = ({ task, index }) => {
       <p className='rf-card-brief'>{task.brief}</p>
 
       <CodeBlock code={task.brokenCode} label='Код с ошибками' variant='broken' />
+
+      {task.playground && (
+        <div className='rf-play-section'>
+          {!playing ? (
+            <button className='rf-play-btn' onClick={() => setPlaying(true)}>
+              🛠 Открыть песочницу — реши и запусти прямо здесь
+            </button>
+          ) : (
+            <Suspense
+              fallback={<div className='rf-play-loading'>Загрузка редактора…</div>}
+            >
+              <CodeRunner playground={task.playground} />
+            </Suspense>
+          )}
+        </div>
+      )}
 
       {!revealed ? (
         <button className='rf-reveal-btn' onClick={() => setRevealed(true)}>

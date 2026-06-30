@@ -18,6 +18,29 @@ export interface Bug {
   detail: string
 }
 
+/** Один проверочный тест плейграунда */
+export interface PlaygroundTest {
+  /** Название теста (показывается в результатах) */
+  name: string
+  /**
+   * Выражение, которое должно вернуть true.
+   * Имеет доступ к экспортам/переменным пользовательского кода
+   * и к хелперу expect(actual).toEqual(expected).
+   */
+  assert: string
+}
+
+/** Интерактивный плейграунд: редактируемый код + запуск с тестами */
+export interface Playground {
+  /**
+   * Стартовый код в редакторе (обычно — заготовка/«грязная» версия,
+   * которую нужно довести). Чистый TS, выполнимый в браузере.
+   */
+  starter: string
+  /** Проверочные тесты, прогоняются после выполнения кода */
+  tests: PlaygroundTest[]
+}
+
 export interface RefactorTask {
   id: string
   title: string
@@ -33,6 +56,12 @@ export interface RefactorTask {
   fixedCode: string
   /** Резюме: почему так лучше */
   takeaway: string
+  /**
+   * Опциональный интерактивный плейграунд. Есть только у задач
+   * с запускаемой логикой (чистые функции, дженерики, type guards).
+   * React-компоненты и чисто типовые кейсы плейграунда не имеют.
+   */
+  playground?: Playground
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {

@@ -22,17 +22,34 @@ body {
   background: #1e293b;
   display: flex;
   flex-direction: column;
-  padding: 20px 12px;
+  padding: 56px 0 20px;
   position: sticky;
   top: 0;
   height: 100vh;
 }
 
+.app-sidebar-collapsed {
+  width: auto;
+  background-color: #f8fafc;
+}
+
 .toggle-button {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 0;
+  left: 0;
   z-index: 1000;
+  font-size: 8px;
+  border-radius: 15%;
+  padding: 2px;
+  background-color: #0f172a;
+  border-width: 1px;
+  border-color: #334155;
+  border-style: solid;
+  &:hover {
+    background-color: #6366f1;
+    color: #0f172a;
+    cursor: pointer;
+  }
 }
 
 .sidebar-logo {

@@ -168,6 +168,56 @@ function Button(props: ButtonProps) {
 // <Button label="x" href="/a" onClick={fn} /> — ошибка ✅`,
     takeaway:
       'Когда наборы пропсов взаимоисключающие (ссылка vs кнопка, controlled vs uncontrolled), описывай их через discriminated union с onClick?: never / href?: never. Это запрещает невозможные комбинации на уровне типов, а не в рантайме.',
+    playground: {
+      starter: `// Задача: типизируй пропсы кнопки так, чтобы нельзя было
+// передать href и onClick одновременно (или ни одного).
+// Подсказка: discriminated union с onClick?: never / href?: never.
+
+// TODO: сейчас тип слишком широкий — оба поля опциональны.
+interface ButtonProps {
+  label: string
+  href?: string
+  external?: boolean
+  onClick?: () => void
+}
+
+// renderButton не рендерит JSX, а возвращает описание результата —
+// так удобнее проверять поведение без React.
+function renderButton(props: ButtonProps) {
+  if (props.href) {
+    return {
+      tag: 'a' as const,
+      label: props.label,
+      href: props.href,
+      target: props.external ? '_blank' : undefined,
+    }
+  }
+  return {
+    tag: 'button' as const,
+    label: props.label,
+    onClick: props.onClick,
+  }
+}
+
+// ── Демонстрация (меняй по желанию) ──
+console.log(renderButton({ label: 'Открыть', href: '/page', external: true }))
+console.log(renderButton({ label: 'Сохранить', onClick: () => console.log('click') }))
+`,
+      tests: [
+        {
+          name: 'рендер ссылки возвращает tag "a" с href и target',
+          assert: `expect(renderButton({ label: 'Открыть', href: '/page', external: true })).toEqual({ tag: 'a', label: 'Открыть', href: '/page', target: '_blank' })`,
+        },
+        {
+          name: 'рендер ссылки без external оставляет target undefined',
+          assert: `expect(renderButton({ label: 'Открыть', href: '/page' })).toEqual({ tag: 'a', label: 'Открыть', href: '/page', target: undefined })`,
+        },
+        {
+          name: 'рендер кнопки возвращает tag "button" с onClick',
+          assert: `const fn = () => {}; expect(renderButton({ label: 'Сохранить', onClick: fn })).toEqual({ tag: 'button', label: 'Сохранить', onClick: fn })`,
+        },
+      ],
+    },
   },
 
   // 4 ─────────────────────────────────────────────────────────────────────
@@ -221,6 +271,58 @@ function Button(props: ButtonProps) {
 }`,
     takeaway:
       'Когда начальное значение useState пустое/null, задавай тип явно: useState<User[]>([]), useState<User | null>(null). Без этого TS выведет never[] или null, и любое осмысленное использование сломается.',
+    playground: {
+      starter: `// Задача: createState — упрощённая имитация useState (чистый TS,
+// без React и без реальных хуков). Сейчас параметр initial не
+// типизирован дженериком, поэтому при пустом массиве / null TS
+// выводит never[] / null — в state нельзя положить ничего
+// осмысленного.
+//
+// Подсказка: добавь явный generic-параметр <T> у createState
+// и указывай его при вызове: createState<User[]>([]),
+// createState<User | null>(null).
+
+interface User {
+  id: string
+  name: string
+}
+
+function createState(initial) {
+  let value = initial
+  const get = () => value
+  const set = (v) => { value = v }
+  return { get, set }
+}
+
+// ── Демонстрация (меняй по желанию) ──
+const usersState = createState([]) // должно быть User[]
+const selectedState = createState(null) // должно быть User | null
+
+usersState.set([{ id: '1', name: 'Ann' }])
+console.log(usersState.get())
+
+selectedState.set({ id: '1', name: 'Ann' })
+console.log(selectedState.get())
+`,
+      tests: [
+        {
+          name: 'createState<User[]>([]) изначально возвращает пустой массив',
+          assert: `expect(createState<User[]>([]).get()).toEqual([])`,
+        },
+        {
+          name: 'set/get корректно работают с массивом User',
+          assert: `const s = createState<User[]>([]); s.set([{ id: '1', name: 'Ann' }]); expect(s.get()).toEqual([{ id: '1', name: 'Ann' }])`,
+        },
+        {
+          name: 'set/get корректно работают с User | null',
+          assert: `const s = createState<User | null>(null); s.set({ id: '2', name: 'Bob' }); expect(s.get()).toEqual({ id: '2', name: 'Bob' })`,
+        },
+        {
+          name: 'начальное значение null допустимо для User | null',
+          assert: `expect(createState<User | null>(null).get()).toBe(null)`,
+        },
+      ],
+    },
   },
 
   // 5 ─────────────────────────────────────────────────────────────────────
@@ -382,6 +484,48 @@ function getName2(map: UserMap, id: string) {
 }`,
     takeaway:
       'Доступ по индексу к словарю потенциально даёт undefined. Включи noUncheckedIndexedAccess (или типизируй значение как T | undefined) и проверяй результат через guard / ?.. Иначе TS будет уверять, что ключ есть, а рантайм — падать.',
+    playground: {
+      starter: `// Задача: убери ложную гарантию "ключ есть" из UserMap.
+// Подсказка: Record<string, User | undefined> + guard (или ?.) в getName.
+
+interface User {
+  id: string
+  name: string
+}
+
+interface UserMap {
+  [id: string]: User
+}
+
+function getName(map: UserMap, id: string) {
+  // TODO: map[id] типизирован как User, даже если ключа нет —
+  // .name может упасть в рантайме на undefined
+  return map[id].name
+}
+
+// ── Демонстрация (меняй по желанию) ──
+const map: UserMap = { '1': { id: '1', name: 'Ann' } }
+console.log(getName(map, '1'))
+`,
+      tests: [
+        {
+          name: 'getName возвращает имя для существующего ключа',
+          assert: `expect(getName({ '1': { id: '1', name: 'Ann' } }, '1')).toBe('Ann')`,
+        },
+        {
+          name: 'getName возвращает undefined для несуществующего ключа без падения',
+          assert: `expect(getName({ '1': { id: '1', name: 'Ann' } }, 'missing')).toBe(undefined)`,
+        },
+        {
+          name: 'getName работает с несколькими ключами в словаре',
+          assert: `expect(getName({ '1': { id: '1', name: 'Ann' }, '2': { id: '2', name: 'Bob' } }, '2')).toBe('Bob')`,
+        },
+        {
+          name: 'getName возвращает undefined для пустого словаря',
+          assert: `expect(getName({}, 'any')).toBe(undefined)`,
+        },
+      ],
+    },
   },
 
   // 8 ─────────────────────────────────────────────────────────────────────
@@ -430,6 +574,55 @@ const STATUSES = ['idle', 'loading', 'success', 'error'] as const
 type Status2 = (typeof STATUSES)[number]`,
     takeaway:
       'Для фиксированного набора строк предпочитай union строковых литералов ("a" | "b"): нулевой рантайм, лучше инференс, проще передавать как обычные строки. enum оставляй там, где реально нужен рантайм-объект. Нужен перебор — array as const + (typeof arr)[number].',
+    playground: {
+      starter: `// Задача: избавься от enum и перепиши на union строковых литералов.
+// Подсказка: type Status = 'idle' | 'loading' | 'success' | 'error'
+// плюс массив STATUSES as const + тип (typeof STATUSES)[number].
+// TODO: замени enum Status на union + as const массив со списком статусов.
+
+enum Status {
+  Idle = 'idle',
+  Loading = 'loading',
+  Success = 'success',
+  Error = 'error',
+}
+
+function getBadgeLabel(status: Status): string {
+  switch (status) {
+    case Status.Idle:
+      return 'Ожидание'
+    case Status.Loading:
+      return 'Загрузка'
+    case Status.Success:
+      return 'Готово'
+    case Status.Error:
+      return 'Ошибка'
+  }
+}
+
+// ── Демонстрация (меняй по желанию) ──
+console.log(getBadgeLabel(Status.Idle))
+console.log(getBadgeLabel(Status.Success))
+`,
+      tests: [
+        {
+          name: 'getBadgeLabel принимает обычную строку "idle", а не Status.Idle',
+          assert: `expect(getBadgeLabel('idle')).toBe('Ожидание')`,
+        },
+        {
+          name: 'getBadgeLabel возвращает корректный текст для "loading"',
+          assert: `expect(getBadgeLabel('loading')).toBe('Загрузка')`,
+        },
+        {
+          name: 'getBadgeLabel возвращает корректный текст для "success" и "error"',
+          assert: `expect(getBadgeLabel('success')).toBe('Готово') && expect(getBadgeLabel('error')).toBe('Ошибка')`,
+        },
+        {
+          name: 'STATUSES содержит все четыре статуса в правильном порядке',
+          assert: `expect(STATUSES).toEqual(['idle', 'loading', 'success', 'error'])`,
+        },
+      ],
+    },
   },
 
   // 9 ─────────────────────────────────────────────────────────────────────
@@ -537,6 +730,50 @@ function area(s: Shape) {
 // if (s.kind === 'circle') { ... } — TS сужает автоматически`,
     takeaway:
       'Чтобы функция-проверка сужала тип, её возврат должен быть type predicate (arg is Type), а не boolean. Для discriminated union обычно достаточно проверки дискриминанта (s.kind === "circle") прямо в if — TS сузит сам, без отдельного guard.',
+    playground: {
+      starter: `// Задача: сделай так, чтобы isCircle сужал тип Shape после if.
+// Подсказка: возвращаемый тип isCircle должен быть type predicate
+// (s is ...), а не boolean.
+
+type Shape =
+  | { kind: 'circle'; radius: number }
+  | { kind: 'square'; side: number }
+
+function isCircle(s: Shape): boolean {
+  // TODO: замени boolean на type predicate s is Extract<Shape, { kind: 'circle' }>
+  return s.kind === 'circle'
+}
+
+function area(s: Shape) {
+  if (isCircle(s)) {
+    return Math.PI * s.radius ** 2 // ошибка: radius нет на square, пока isCircle не сужает тип
+  }
+  return s.side ** 2
+}
+
+// ── Демонстрация (меняй по желанию) ──
+console.log(area({ kind: 'circle', radius: 2 }))
+console.log(area({ kind: 'square', side: 3 }))
+`,
+      tests: [
+        {
+          name: 'area считает площадь круга через Math.PI * radius ** 2',
+          assert: `expect(area({ kind: 'circle', radius: 2 })).toBe(Math.PI * 4)`,
+        },
+        {
+          name: 'area считает площадь квадрата через side ** 2',
+          assert: `expect(area({ kind: 'square', side: 3 })).toBe(9)`,
+        },
+        {
+          name: 'area корректно работает с радиусом 1',
+          assert: `expect(area({ kind: 'circle', radius: 1 })).toBe(Math.PI)`,
+        },
+        {
+          name: 'area корректно работает со стороной 5',
+          assert: `expect(area({ kind: 'square', side: 5 })).toBe(25)`,
+        },
+      ],
+    },
   },
 
   // 11 ────────────────────────────────────────────────────────────────────
@@ -594,6 +831,54 @@ function reducer(state: number, action: Action): number {
 }`,
     takeaway:
       'Для switch по discriminated union добавляй exhaustiveness-проверку: в default передавай значение в assertNever(x: never). Любой новый необработанный вариант вызовет ошибку компиляции вместо тихого бага. Бесценно для редьюсеров и обработки событий.',
+    playground: {
+      starter: `// Задача: добавь exhaustiveness-проверку через assertNever(x: never).
+// Подсказка: напиши function assertNever(x: never): never { throw new Error(...) }
+// и вызови её в default вместо return state.
+// TODO: замени "default: return state" на проверку через assertNever(action),
+// чтобы новый необработанный вариант Action ловился на этапе компиляции.
+
+type Action =
+  | { type: 'increment' }
+  | { type: 'decrement' }
+  | { type: 'reset' }
+
+function reducer(state: number, action: Action): number {
+  switch (action.type) {
+    case 'increment':
+      return state + 1
+    case 'decrement':
+      return state - 1
+    case 'reset':
+      return 0
+    default:
+      return state
+  }
+}
+
+// ── Демонстрация (меняй по желанию) ──
+console.log(reducer(0, { type: 'increment' }))
+console.log(reducer(5, { type: 'reset' }))
+`,
+      tests: [
+        {
+          name: 'increment увеличивает state на 1',
+          assert: `expect(reducer(0, { type: 'increment' })).toBe(1)`,
+        },
+        {
+          name: 'decrement уменьшает state на 1',
+          assert: `expect(reducer(5, { type: 'decrement' })).toBe(4)`,
+        },
+        {
+          name: 'reset возвращает 0',
+          assert: `expect(reducer(5, { type: 'reset' })).toBe(0)`,
+        },
+        {
+          name: 'increment работает с произвольным state',
+          assert: `expect(reducer(10, { type: 'increment' })).toBe(11)`,
+        },
+      ],
+    },
   },
 
   // 12 ────────────────────────────────────────────────────────────────────
@@ -678,6 +963,39 @@ function Input({ value }: Props) {
 }`,
     takeaway:
       'Типизируй входные массивы/объекты как readonly (readonly T[], Readonly<T>) — это превращает случайные мутации (.sort, .push, присваивание полей) в ошибки компиляции. Перед мутацией копируй ([...arr]) или используй неизменяющие методы (toSorted, toReversed).',
+    playground: {
+      starter: `// Задача: getSortedList мутирует исходный массив через items.sort().
+// TODO: сделай items: readonly number[] и копируй массив ([...items])
+// перед сортировкой, чтобы исходные данные не менялись.
+
+function getSortedList(items: number[]): number[] {
+  return items.sort((a, b) => a - b)
+}
+
+// ── Демонстрация (меняй по желанию) ──
+const original = [3, 1, 2]
+console.log(getSortedList(original))
+console.log(original) // не должен измениться
+`,
+      tests: [
+        {
+          name: 'возвращает отсортированный по возрастанию массив',
+          assert: `expect(getSortedList([3, 1, 2])).toEqual([1, 2, 3])`,
+        },
+        {
+          name: 'не мутирует исходный массив-аргумент',
+          assert: `const original = [3, 1, 2]; getSortedList(original); expect(original).toEqual([3, 1, 2])`,
+        },
+        {
+          name: 'работает с уже отсортированным массивом',
+          assert: `expect(getSortedList([1, 2, 3])).toEqual([1, 2, 3])`,
+        },
+        {
+          name: 'не мутирует исходный массив даже для другого набора данных',
+          assert: `const original = [5, -1, 0, 2]; getSortedList(original); expect(original).toEqual([5, -1, 0, 2])`,
+        },
+      ],
+    },
   },
 
   // 14 ────────────────────────────────────────────────────────────────────
@@ -728,6 +1046,55 @@ const ROUTES = ['/home', '/about'] as const
 type Route = (typeof ROUTES)[number] // '/home' | '/about'`,
     takeaway:
       'Без as const TS расширяет строковые/числовые литералы до string/number. Применяй as const к конфигам, кортежам и массивам, когда нужны точные литеральные типы — например, чтобы значение подходило под union-проп или порождало тип через (typeof arr)[number].',
+    playground: {
+      starter: `// Задача: зафиксируй литеральные типы через as const, чтобы
+// applyButtonConfig(config.variant, config.size) не давал ошибку типа.
+// TODO: добавь "as const" после объекта config — без него variant и size
+// расширяются до string, и их нельзя передать в параметры с union-типом.
+
+const config = {
+  variant: 'primary',
+  size: 'lg',
+}
+
+function applyButtonConfig(props: { variant: 'primary' | 'ghost'; size: 'sm' | 'lg' }): string {
+  return \`\${props.variant}-\${props.size}\`
+}
+
+// Раскомментируй после добавления as const — без него здесь ошибка типов:
+// console.log(applyButtonConfig({ variant: config.variant, size: config.size }))
+
+// as const также нужен для кортежей-источников union:
+const ROUTES = ['/home', '/about']
+type Route = (typeof ROUTES)[number]
+
+function isValidRoute(r: string): boolean {
+  return (ROUTES as readonly string[]).includes(r)
+}
+
+// ── Демонстрация (меняй по желанию) ──
+console.log(applyButtonConfig({ variant: 'primary', size: 'lg' }))
+console.log(isValidRoute('/home'))
+`,
+      tests: [
+        {
+          name: 'applyButtonConfig с config.variant/config.size после as const даёт ожидаемую строку',
+          assert: `expect(applyButtonConfig({ variant: 'primary', size: 'lg' })).toBe('primary-lg')`,
+        },
+        {
+          name: 'applyButtonConfig работает с другой комбинацией литералов',
+          assert: `expect(applyButtonConfig({ variant: 'ghost', size: 'sm' })).toBe('ghost-sm')`,
+        },
+        {
+          name: 'isValidRoute находит существующий маршрут из ROUTES as const',
+          assert: `expect(isValidRoute('/about')).toBe(true)`,
+        },
+        {
+          name: 'isValidRoute отклоняет маршрут, которого нет в ROUTES',
+          assert: `expect(isValidRoute('/missing')).toBe(false)`,
+        },
+      ],
+    },
   },
 
   // 15 ────────────────────────────────────────────────────────────────────
@@ -868,6 +1235,35 @@ const age = get(user, 'age')   // number ✅
 const typo = get(user, 'naem') // ошибка: 'naem' не ключ user ✅`,
     takeaway:
       'Для типобезопасного доступа к полям используй generic <T, K extends keyof T> и возвращай T[K]. keyof ограничивает ключ реальными свойствами, индексный доступ T[K] выводит точный тип значения. Так строятся типобезопасные get/pluck/sortBy.',
+    playground: {
+      starter: `// Задача: типизируй get так, чтобы тип результата
+// зависел от ключа (string -> string, number -> number).
+// Подсказка: generic <T, K extends keyof T> и возврат T[K].
+
+function get(obj: any, key: string): any {
+  return obj[key]
+}
+
+// ── Демонстрация (меняй по желанию) ──
+const user = { name: 'Ann', age: 30 }
+console.log(get(user, 'name'))
+console.log(get(user, 'age'))
+`,
+      tests: [
+        {
+          name: 'get возвращает значение по строковому ключу',
+          assert: `expect(get({ name: 'Ann', age: 30 }, 'name')).toBe('Ann')`,
+        },
+        {
+          name: 'get возвращает значение по числовому полю',
+          assert: `expect(get({ name: 'Ann', age: 30 }, 'age')).toBe(30)`,
+        },
+        {
+          name: 'get работает с вложенным объектом как значением',
+          assert: `expect(get({ profile: { city: 'NY' } }, 'profile')).toEqual({ city: 'NY' })`,
+        },
+      ],
+    },
   },
 
   // 18 ────────────────────────────────────────────────────────────────────

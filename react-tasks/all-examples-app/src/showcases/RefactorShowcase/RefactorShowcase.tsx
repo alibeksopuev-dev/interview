@@ -13,15 +13,22 @@ type CategoryFilter = Category | 'all'
 export const RefactorShowcase: FC = () => {
   const [level, setLevel] = useState<LevelFilter>('all')
   const [category, setCategory] = useState<CategoryFilter>('all')
+  const [sandboxOnly, setSandboxOnly] = useState(false)
+
+  const sandboxCount = useMemo(
+    () => ALL_TASKS.filter(t => t.playground).length,
+    [],
+  )
 
   const visibleTasks = useMemo(
     () =>
       ALL_TASKS.filter(t => {
         const byLevel = level === 'all' || t.level === level
         const byCat = category === 'all' || t.categories.includes(category)
-        return byLevel && byCat
+        const bySandbox = !sandboxOnly || Boolean(t.playground)
+        return byLevel && byCat && bySandbox
       }),
-    [level, category],
+    [level, category, sandboxOnly],
   )
 
   const usedCategories = useMemo(() => {
@@ -43,6 +50,16 @@ export const RefactorShowcase: FC = () => {
       </header>
 
       <div className='rf-filters'>
+        <div className='rf-filter-group'>
+          <span className='rf-filter-label'>Песочница</span>
+          <button
+            className={`rf-chip rf-chip-sandbox${sandboxOnly ? ' rf-chip-active' : ''}`}
+            onClick={() => setSandboxOnly(v => !v)}
+          >
+            🛠 Только с песочницей ({sandboxCount})
+          </button>
+        </div>
+
         <div className='rf-filter-group'>
           <span className='rf-filter-label'>Уровень</span>
           {(['all', 'middle', 'senior'] as LevelFilter[]).map(l => (
