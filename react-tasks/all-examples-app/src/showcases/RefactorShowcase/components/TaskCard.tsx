@@ -13,7 +13,7 @@ interface TaskCardProps {
 }
 
 export const TaskCard: FC<TaskCardProps> = ({ task, index }) => {
-  const [revealed, setRevealed] = useState(false)
+  const [revealed, setRevealed] = useState(true)
   const [playing, setPlaying] = useState(false)
 
   return (
