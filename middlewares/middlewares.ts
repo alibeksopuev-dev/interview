@@ -102,6 +102,78 @@ export function middlewaresWithThen(...fns: Array<MiddlewareFn>) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ВЕРСИЯ С ПОДРОБНОЙ ТРАССИРОВКОЙ (для наглядности)
+//
+// Та же логика, что и в middlewares(), но с console.log на каждом шаге.
+// Показывает "луковичный" поток: как управление уходит ВНИЗ по цепочке,
+// доходит до ядра, а потом разворачивается ОБРАТНО НАВЕРХ.
+//
+// Обозначения (слева каждой строки):
+//   ↓ ВХОД   — вызываем middleware #index (управление идёт вниз)
+//   → NEXT   — middleware вызвал next(), уходим на следующий уровень
+//   ⌂ ЯДРО   — конец цепочки, next() больше некого запускать
+//   ⏸ AWAIT  — текущий middleware приостановлен на `await next()`
+//   ▶ RESUME — нижняя часть завершилась, middleware продолжает после await
+//   ↑ ВЫХОД  — middleware #index полностью завершился
+//
+// Отступ (indent) = глубина рекурсии. shot() печатает текущий стек context,
+// чтобы было видно, как он наполняется по ходу выполнения.
+// ─────────────────────────────────────────────────────────────────────────────
+export function middlewaresTraced(...fns: Array<MiddlewareFn>) {
+  let step = 0 // сквозной счётчик шагов, чтобы видеть реальный порядок событий
+
+  return async function (context: any = {}): Promise<void> {
+    console.log('═'.repeat(70))
+    console.log(`🚀 СТАРТ. Всего middleware: ${fns.length}. context =`, context)
+    console.log('═'.repeat(70))
+
+    // Печать одной строки трассировки с номером шага, отступом и стеком context.
+    const log = (index: number, mark: string, msg: string) => {
+      step += 1
+      const pad = '│  '.repeat(index) // вертикальные направляющие по глубине
+      const stack = Array.isArray(context.stack) ? ` stack=[${context.stack.join(', ')}]` : ''
+      console.log(`шаг ${String(step).padStart(2, ' ')} ${pad}${mark} #${index}: ${msg}${stack}`)
+    }
+
+    async function execute(index: number): Promise<void> {
+      // База рекурсии: дошли до конца — запускать больше некого.
+      if (index === fns.length) {
+        log(index, '⌂ ЯДРО', 'конец цепочки — next() ничего не запускает, возвращаемся')
+        return
+      }
+
+      const fn = fns[index]
+
+      // Управление идёт ВНИЗ: запускаем middleware под номером index.
+      log(index, '↓ ВХОД ', `вызываем middleware #${index} (fn(context, next))`)
+
+      // Оборачиваем next(), чтобы залогировать и его вызов, и приостановку/возврат.
+      const next = () => {
+        log(index, '→ NEXT ', `middleware #${index} вызвал next() → передаём управление #${index + 1}`)
+        log(index, '⏸ AWAIT', `middleware #${index} приостановлен, ждёт всю нижнюю цепочку`)
+        const p = execute(index + 1)
+        // Когда нижняя часть завершится — залогируем возобновление.
+        return p.then(() => {
+          log(index, '▶ RESUME', `нижняя цепочка завершилась → middleware #${index} продолжает после await next()`)
+        })
+      }
+
+      // await приостановит текущий middleware на `await next()`, пока не
+      // завершится ВСЯ нижняя часть цепочки (та самая луковица).
+      await fn(context, next)
+
+      // Управление вернулось НАВЕРХ: нижняя часть цепочки полностью отработала.
+      log(index, '↑ ВЫХОД', `middleware #${index} полностью завершился`)
+    }
+
+    await execute(0)
+    console.log('═'.repeat(70))
+    console.log(`🏁 ФИНАЛ. context =`, context)
+    console.log('═'.repeat(70))
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ЧАСТАЯ ОШИБКА (антипаттерн): index как переменная снаружи
 //
 // index НЕ должен быть переменной снаружи функции — иначе все вызовы
@@ -109,6 +181,110 @@ export function middlewaresWithThen(...fns: Array<MiddlewareFn>) {
 // только один раз. Правильно — index это аргумент execute(index),
 // он свой для каждого запуска цепочки (см. execute выше).
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ПРИМЕР ИЗ РЕАЛЬНОГО ПРОЕКТА: обработка HTTP-запроса (в стиле Koa)
+//
+// context здесь имитирует HTTP-запрос/ответ. Через цепочку middleware он
+// проходит как "запрос", каждый слой его дополняет или прерывает.
+//
+// Порядок middleware важен:
+//   errorHandler → logger → cors → auth → handler
+//   (от общего к конкретному; error handler оборачивает всё)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Тип нашего "запроса" (упрощённый context веб-сервера).
+type Ctx = {
+  method: string
+  url: string
+  headers: Record<string, string>
+  user?: { id: number; name: string }
+  status?: number
+  body?: unknown
+}
+
+// 1. Обработчик ошибок — ставится ПЕРВЫМ, оборачивает всю цепочку в try/catch.
+async function errorHandler(ctx: Ctx, next: () => Promise<void>) {
+  try {
+    await next() // если ЛЮБОЙ middleware ниже упадёт — поймаем здесь
+  } catch (err) {
+    ctx.status = 500
+    ctx.body = { error: (err as Error).message }
+    console.log('  🛡️  errorHandler поймал ошибку:', (err as Error).message)
+  }
+}
+
+// 2. Логгер — использует луковицу: замеряет время ДО и ПОСЛЕ обработки.
+async function logger(ctx: Ctx, next: () => Promise<void>) {
+  const start = Date.now()
+  console.log(`  📝 → ${ctx.method} ${ctx.url}`) // до обработки
+  await next() // вся обработка запроса происходит тут
+  const ms = Date.now() - start
+  console.log(`  📝 ← ${ctx.status} за ${ms}мс`) // после обработки
+}
+
+// 3. CORS — просто дополняет заголовки и пропускает дальше.
+async function cors(ctx: Ctx, next: () => Promise<void>) {
+  ctx.headers['Access-Control-Allow-Origin'] = '*'
+  console.log('  🌐 cors: заголовки выставлены')
+  await next()
+}
+
+// 4. Аутентификация — может ОБОРВАТЬ цепочку, не вызвав next().
+async function auth(ctx: Ctx, next: () => Promise<void>) {
+  const token = ctx.headers['authorization']
+  if (!token) {
+    ctx.status = 401
+    ctx.body = 'Требуется авторизация'
+    console.log('  🔐 auth: токена нет → 401, цепочка остановлена (next не вызван)')
+    return // ← НЕ вызываем next() → handler не запустится
+  }
+  ctx.user = { id: 1, name: 'Алибек' } // "проверили токен", кладём юзера в context
+  console.log('  🔐 auth: токен валиден → пропускаем дальше')
+  await next()
+}
+
+// 5. Бизнес-логика — финальный обработчик, next() уже не нужен.
+async function handler(ctx: Ctx, _next: () => Promise<void>) {
+  console.log(`  🎯 handler: обрабатываю запрос для юзера "${ctx.user?.name}"`)
+  ctx.status = 200
+  ctx.body = { message: `Привет, ${ctx.user?.name}!` }
+}
+
+async function realWorldExample() {
+  const app = middlewares(errorHandler, logger, cors, auth, handler)
+
+  console.log('\n=== Реальный пример A: валидный запрос (есть токен) ===')
+  const ctxOk: Ctx = {
+    method: 'GET',
+    url: '/api/user',
+    headers: { authorization: 'token123' },
+  }
+  await app(ctxOk)
+  console.log('  РЕЗУЛЬТАТ:', ctxOk.status, ctxOk.body)
+
+  console.log('\n=== Реальный пример B: нет токена (auth обрывает цепочку) ===')
+  const ctxNoAuth: Ctx = {
+    method: 'GET',
+    url: '/api/user',
+    headers: {}, // токена нет
+  }
+  await app(ctxNoAuth)
+  console.log('  РЕЗУЛЬТАТ:', ctxNoAuth.status, ctxNoAuth.body)
+  // handler НЕ запустился — auth оборвал цепочку
+
+  console.log('\n=== Реальный пример C: handler бросает ошибку (errorHandler ловит) ===')
+  const appWithError = middlewares(errorHandler, logger, cors, auth, async () => {
+    throw new Error('База данных недоступна')
+  })
+  const ctxErr: Ctx = {
+    method: 'GET',
+    url: '/api/user',
+    headers: { authorization: 'token123' },
+  }
+  await appWithError(ctxErr)
+  console.log('  РЕЗУЛЬТАТ:', ctxErr.status, ctxErr.body)
+}
 
 // ── Тесты ──────────────────────────────────────────────────────────────────
 //
@@ -194,6 +370,29 @@ async function runTests() {
   )
   await thenComposed({})
   console.log(thenStack) // ['1-start', '2', '1-end']
+
+  console.log('\n--- Тест 6: ПОДРОБНАЯ ТРАССИРОВКА (middlewaresTraced) ---')
+  async function t1(ctx: any, next: () => Promise<void>) {
+    ctx.stack.push('fn1-start')
+    await next()
+    ctx.stack.push('fn1-end')
+  }
+  async function t2(ctx: any, next: () => Promise<void>) {
+    ctx.stack.push('fn2-start')
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    await next()
+    ctx.stack.push('fn2-end')
+  }
+  function t3(ctx: any, next: () => Promise<void>) {
+    ctx.stack.push('fn3-start')
+    next()
+    ctx.stack.push('fn3-end')
+  }
+  const tracedFn = middlewaresTraced(t1, t2, t3)
+  await tracedFn({ stack: [] })
+
+  // Пример применения в реальном проекте (HTTP-цепочка в стиле Koa).
+  await realWorldExample()
 }
 
 runTests()
