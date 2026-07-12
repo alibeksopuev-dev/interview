@@ -22,16 +22,16 @@ function listFormat(itemsParam, options) {
     if (items.length === 1) {
         return items[0];
     }
-    if (options === null || options === void 0 ? void 0 : options.sorted) {
+    if (options?.sorted) {
         items.sort();
     }
-    if (options === null || options === void 0 ? void 0 : options.unique) {
+    if (options?.unique) {
         items = Array.from(new Set(items));
     }
     if (items.length === 1) {
         return items[0];
     }
-    if ((options === null || options === void 0 ? void 0 : options.length) && options.length > 0 && options.length < items.length) {
+    if (options?.length && options.length > 0 && options.length < items.length) {
         const firstSection = items.slice(0, options.length).join(SEPARATOR);
         const count = items.length - options.length;
         const secondSection = `${count} ${OTHERS_LABEL + (count > 1 ? "s" : "")}`;

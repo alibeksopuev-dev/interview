@@ -18,7 +18,20 @@
 // как middleware работает во фреймворках вроде Koa.
 // ─────────────────────────────────────────────────────────────────────────────
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.middlewaresTraced = exports.middlewaresWithThen = void 0;
+exports.middlewaresTraced = exports.middlewaresWithThen = exports.middlewaresNoComment = void 0;
+function middlewaresNoComment(...fns) {
+    return async function (context = {}) {
+        async function execute(index) {
+            if (index === fns.length) {
+                return;
+            }
+            const fn = fns[index];
+            await fn(context, () => execute(index + 1));
+        }
+        await execute(0);
+    };
+}
+exports.middlewaresNoComment = middlewaresNoComment;
 // ─────────────────────────────────────────────────────────────────────────────
 // РЕШЕНИЕ: рекурсивная композиция
 //
