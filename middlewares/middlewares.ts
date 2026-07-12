@@ -33,7 +33,6 @@ type MiddlewareFn =
   | ((context: any, next: () => Promise<void>) => Promise<void>)
   | ((context: any, next: () => Promise<void>) => void)
 
-
 export function middlewaresNoComment(...fns: Array<MiddlewareFn>) {
   return async function (context: any = {}): Promise<void> {
     async function execute(index: number): Promise<void> {
@@ -163,12 +162,20 @@ export function middlewaresTraced(...fns: Array<MiddlewareFn>) {
 
       // Оборачиваем next(), чтобы залогировать и его вызов, и приостановку/возврат.
       const next = () => {
-        log(index, '→ NEXT ', `middleware #${index} вызвал next() → передаём управление #${index + 1}`)
+        log(
+          index,
+          '→ NEXT ',
+          `middleware #${index} вызвал next() → передаём управление #${index + 1}`,
+        )
         log(index, '⏸ AWAIT', `middleware #${index} приостановлен, ждёт всю нижнюю цепочку`)
         const p = execute(index + 1)
         // Когда нижняя часть завершится — залогируем возобновление.
         return p.then(() => {
-          log(index, '▶ RESUME', `нижняя цепочка завершилась → middleware #${index} продолжает после await next()`)
+          log(
+            index,
+            '▶ RESUME',
+            `нижняя цепочка завершилась → middleware #${index} продолжает после await next()`,
+          )
         })
       }
 
@@ -314,7 +321,7 @@ async function runTests() {
   }
   async function fn2(ctx: any, next: () => Promise<void>) {
     ctx.stack.push('fn2-start')
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 100))
     await next()
     ctx.stack.push('fn2-end')
   }
@@ -393,7 +400,7 @@ async function runTests() {
   }
   async function t2(ctx: any, next: () => Promise<void>) {
     ctx.stack.push('fn2-start')
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 100))
     await next()
     ctx.stack.push('fn2-end')
   }

@@ -248,7 +248,7 @@ async function runTests() {
     }
     async function fn2(ctx, next) {
         ctx.stack.push('fn2-start');
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 100));
         await next();
         ctx.stack.push('fn2-end');
     }
@@ -311,7 +311,7 @@ async function runTests() {
     }
     async function t2(ctx, next) {
         ctx.stack.push('fn2-start');
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 100));
         await next();
         ctx.stack.push('fn2-end');
     }
