@@ -28,36 +28,36 @@ Array.prototype.myReduce = function <T, U>(
   // Проверяем количество аргументов, чтобы отличить явную передачу `undefined` в качестве initialValue
   // от ситуации, когда аргумент вообще не был передан.
   const noInitialValue = arguments.length <= 1
-  const len = this.length
+  const arrayLength = this.length
 
-  let k = 0
-  let acc: any
+  let index = 0
+  let accumulator: any
 
   if (noInitialValue) {
     // Ищем первый существующий индекс (пропускаем дыры в начале разреженного массива)
-    while (k < len && !Object.hasOwn(this, k)) {
-      k++
+    while (index < arrayLength && !Object.hasOwn(this, index)) {
+      index++
     }
 
     // Если массив пустой (или содержит только дыры) и начальное значение не задано — выбрасываем ошибку
-    if (k >= len) {
+    if (index >= arrayLength) {
       throw new TypeError('Reduce of empty array with no initial value')
     }
 
-    acc = this[k]
-    k++
+    accumulator = this[index]
+    index++
   } else {
-    acc = initialValue
+    accumulator = initialValue
   }
 
-  for (; k < len; k++) {
+  for (; index < arrayLength; index++) {
     // Пропускаем несуществующие индексы (holes)
-    if (Object.hasOwn(this, k)) {
-      acc = callbackFn(acc, this[k], k, this)
+    if (Object.hasOwn(this, index)) {
+      accumulator = callbackFn(accumulator, this[index], index, this)
     }
   }
 
-  return acc
+  return accumulator
 }
 
 // ── Тесты ──────────────────────────────────────────────────────────────────
