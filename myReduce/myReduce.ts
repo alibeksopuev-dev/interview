@@ -17,12 +17,7 @@ declare global {
 
 Array.prototype.myReduce = function <T, U>(
   this: T[],
-  callbackFn: (
-    previousValue: any,
-    currentValue: T,
-    currentIndex: number,
-    array: T[],
-  ) => any,
+  callbackFn: (previousValue: any, currentValue: T, currentIndex: number, array: T[]) => any,
   initialValue?: U,
 ): any {
   // Проверяем количество аргументов, чтобы отличить явную передачу `undefined` в качестве initialValue
@@ -39,7 +34,8 @@ Array.prototype.myReduce = function <T, U>(
       index++
     }
 
-    // Если массив пустой (или содержит только дыры) и начальное значение не задано — выбрасываем ошибку
+    // Если массив пустой (или содержит только дыры) и
+    // начальное значение не задано — выбрасываем ошибку
     if (index >= arrayLength) {
       throw new TypeError('Reduce of empty array with no initial value')
     }
