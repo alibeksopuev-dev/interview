@@ -2,8 +2,15 @@ export {}
 
 declare global {
   interface Array<T> {
+    // 1. Сигнатура для Type Guard (сужение типов)
+    myFilter<S extends T>(
+      callbackFn: (value: T, index: number, array: Array<T>) => value is S,
+      thisArg?: any,
+    ): Array<S>
+
+    // 2. Стандартная сигнатура для обычных предикатов
     myFilter(
-      callbackFn: (value: T, index: number, array: Array<T>) => boolean,
+      callbackFn: (value: T, index: number, array: Array<T>) => unknown,
       thisArg?: any,
     ): Array<T>
   }
@@ -11,9 +18,9 @@ declare global {
 
 Array.prototype.myFilter = function <T>(
   this: T[],
-  callbackFn: (value: T, index: number, array: T[]) => boolean,
+  callbackFn: (value: T, index: number, array: T[]) => unknown,
   thisArg?: any,
-): T[] {
+): any[] {
   const arrayLength = this.length
   const array: T[] = []
 

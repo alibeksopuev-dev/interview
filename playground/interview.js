@@ -1,77 +1,90 @@
 function isLetter(char) {
-  return char.toLowerCase() !== char.toUpperCase();
+  return char.toLowerCase() !== char.toUpperCase()
 }
 
 function isEquals(char1, char2) {
-  return char1.toLowerCase() === char2.toLowerCase();
+  return char1.toLowerCase() === char2.toLowerCase()
 }
 
 function isPalindrome(str) {
-  let start = 0;
-  let end = str.length - 1;
+  let start = 0
+  let end = str.length - 1
 
   while (start < end) {
-    const firstChar = str[start];
-    const endChar = str[end];
+    const firstChar = str[start]
+    const endChar = str[end]
 
     if (!isLetter(firstChar)) {
-      start += 1;
-      continue;
+      start += 1
+      continue
     }
 
     if (!isLetter(endChar)) {
-      end -= 1;
-      continue;
+      end -= 1
+      continue
     }
 
     if (!isEquals(firstChar, endChar)) {
-      return false;
+      return false
     }
 
-    start += 1;
-    end -= 1;
+    start += 1
+    end -= 1
   }
 
-  return true;
+  return true
 }
 
-console.log(isPalindrome("A man, a plan, a canal: Panama"));
+console.log(isPalindrome('A man, a plan, a canal: Panama'))
 
 function range(arr) {
-  const sortedArr = [...arr].sort((a, b) => a - b);
+  const sortedArr = [...arr].sort((a, b) => a - b)
   if (!sortedArr.length) {
     return ''
   }
 
-  const result = [String(sortedArr[0])];
-  let isInterval = false;
+  const result = [String(sortedArr[0])]
+  let isInterval = false
 
   for (let i = 1; i <= sortedArr.length; i++) {
-    const prev = sortedArr[i - 1];
-    const current = sortedArr[i];
+    const prev = sortedArr[i - 1]
+    const current = sortedArr[i]
 
     if (current - prev === 1) {
-      isInterval = true;
-      continue;
+      isInterval = true
+      continue
     }
 
     if (isInterval) {
       result[result.length - 1] += `-${prev}`
-      isInterval = false;
+      isInterval = false
     }
 
     if (current) {
-      result.push(String(current));
+      result.push(String(current))
     }
-
   }
-  return result.join(',');
+  return result.join(',')
 }
 
-
-const array1 = [[1, 3], [2, 6], [8, 10], [15, 18]]; // [[1, 6], [8, 10], [15, 18]]
-const array2 = [[1, 4], [4, 5]]; // [[1, 5]]
-const array3 = [[11, 12], [2, 3], [5, 7], [1, 4], [8, 10], [6, 8]]; // [[1, 4], [5, 10], [11, 12]]
+const array1 = [
+  [1, 3],
+  [2, 6],
+  [8, 10],
+  [15, 18],
+] // [[1, 6], [8, 10], [15, 18]]
+const array2 = [
+  [1, 4],
+  [4, 5],
+] // [[1, 5]]
+const array3 = [
+  [11, 12],
+  [2, 3],
+  [5, 7],
+  [1, 4],
+  [8, 10],
+  [6, 8],
+] // [[1, 4], [5, 10], [11, 12]]
 
 function merge(intervals) {
   if (intervals.length < 2) return intervals
@@ -81,7 +94,7 @@ function merge(intervals) {
   let result = [intervals[0]]
 
   for (let interval of intervals) {
-    let recent = result[result.length - 1];
+    let recent = result[result.length - 1]
 
     if (recent[1] >= interval[0]) {
       recent[1] = Math.max(recent[1], interval[1])
@@ -93,15 +106,15 @@ function merge(intervals) {
   return result
 }
 
-console.log(merge(array3));
+console.log(merge(array3))
 
-intervals = [
-  [1, 4],   // интервал 1
-  [2, 3],   // интервал 2
-  [5, 7],   // интервал 3
-  [6, 8],   // интервал 4
-  [8, 10],  // интервал 5
-  [11, 12]  // интервал 6
+const intervals = [
+  [1, 4], // интервал 1
+  [2, 3], // интервал 2
+  [5, 7], // интервал 3
+  [6, 8], // интервал 4
+  [8, 10], // интервал 5
+  [11, 12], // интервал 6
 ]
 
 /**
@@ -111,38 +124,38 @@ intervals = [
  */
 function isValidBrackets(bracketString) {
   // Стек для хранения открывающих скобок
-  const openBracketsStack = [];
+  const openBracketsStack = []
 
   // Объект, определяющий соответствие между закрывающими и открывающими скобками
   const bracketPairs = {
-    ')': '(',  // для круглых скобок
-    '}': '{',  // для фигурных скобок
-    ']': '['   // для квадратных скобок
-  };
+    ')': '(', // для круглых скобок
+    '}': '{', // для фигурных скобок
+    ']': '[', // для квадратных скобок
+  }
 
   // Проходим по каждому символу в строке
   for (let position = 0; position < bracketString.length; position++) {
-    const currentBracket = bracketString[position];
+    const currentBracket = bracketString[position]
 
     // Проверяем, является ли текущий символ закрывающей скобкой
     if (isClosingBracket(currentBracket)) {
       // Получаем соответствующую открывающую скобку для текущей закрывающей
-      const matchingOpenBracket = bracketPairs[currentBracket];
+      const matchingOpenBracket = bracketPairs[currentBracket]
       // Получаем последнюю открывающую скобку из стека
-      const lastOpenBracket = openBracketsStack.pop();
+      const lastOpenBracket = openBracketsStack.pop()
 
       // Если скобки не соответствуют друг другу - последовательность неверная
       if (matchingOpenBracket !== lastOpenBracket) {
-        return false;
+        return false
       }
     } else {
       // Если это открывающая скобка - добавляем её в стек
-      openBracketsStack.push(currentBracket);
+      openBracketsStack.push(currentBracket)
     }
   }
 
   // Проверяем, что все открывающие скобки были закрыты
-  return openBracketsStack.length === 0;
+  return openBracketsStack.length === 0
 }
 
 /**
@@ -151,8 +164,8 @@ function isValidBrackets(bracketString) {
  * @returns {boolean} - true если это закрывающая скобка, false если нет
  */
 function isClosingBracket(bracket) {
-  const closingBrackets = [')', '}', ']'];
-  return closingBrackets.indexOf(bracket) > -1;
+  const closingBrackets = [')', '}', ']']
+  return closingBrackets.indexOf(bracket) > -1
 }
 
 /**
@@ -162,38 +175,38 @@ function isClosingBracket(bracket) {
  */
 function isValidBrackets(bracketString) {
   // Стек для хранения открывающих скобок
-  const openBracketsStack = [];
+  const openBracketsStack = []
 
   // Объект, определяющий соответствие между закрывающими и открывающими скобками
   const bracketPairs = {
-    ')': '(',  // для круглых скобок
-    '}': '{',  // для фигурных скобок
-    ']': '['   // для квадратных скобок
-  };
+    ')': '(', // для круглых скобок
+    '}': '{', // для фигурных скобок
+    ']': '[', // для квадратных скобок
+  }
 
   // Проходим по каждому символу в строке
   for (let position = 0; position < bracketString.length; position++) {
-    const currentBracket = bracketString[position];
+    const currentBracket = bracketString[position]
 
     // Проверяем, является ли текущий символ закрывающей скобкой
     if (isClosingBracket(currentBracket)) {
       // Получаем соответствующую открывающую скобку для текущей закрывающей
-      const matchingOpenBracket = bracketPairs[currentBracket];
+      const matchingOpenBracket = bracketPairs[currentBracket]
       // Получаем последнюю открывающую скобку из стека
-      const lastOpenBracket = openBracketsStack.pop();
+      const lastOpenBracket = openBracketsStack.pop()
 
       // Если скобки не соответствуют друг другу - последовательность неверная
       if (matchingOpenBracket !== lastOpenBracket) {
-        return false;
+        return false
       }
     } else {
       // Если это открывающая скобка - добавляем её в стек
-      openBracketsStack.push(currentBracket);
+      openBracketsStack.push(currentBracket)
     }
   }
 
   // Проверяем, что все открывающие скобки были закрыты
-  return openBracketsStack.length === 0;
+  return openBracketsStack.length === 0
 }
 
 /**
@@ -202,43 +215,42 @@ function isValidBrackets(bracketString) {
  * @returns {boolean} - true если это закрывающая скобка, false если нет
  */
 function isClosingBracket(bracket) {
-  const closingBrackets = [')', '}', ']'];
-  return closingBrackets.indexOf(bracket) > -1;
+  const closingBrackets = [')', '}', ']']
+  return closingBrackets.indexOf(bracket) > -1
 }
 
 // Примеры использования с разными тестовыми случаями
 const testCases = [
-  '()',           // true  - простая пара скобок
-  '()[]{}',       // true  - несколько пар разных скобок
-  '(]',           // false - несоответствующие скобки
-  '{[]}',         // true  - вложенные скобки
-  '([)]',         // false - перекрестные скобки
-  '{[[]{}]}()()'  // true  - сложная комбинация вложенных скобок
-];
+  '()', // true  - простая пара скобок
+  '()[]{}', // true  - несколько пар разных скобок
+  '(]', // false - несоответствующие скобки
+  '{[]}', // true  - вложенные скобки
+  '([)]', // false - перекрестные скобки
+  '{[[]{}]}()()', // true  - сложная комбинация вложенных скобок
+]
 
 const firstUniqChar = function (s) {
-  let map = new Map();
+  let map = new Map()
 
   for (let i = 0; i < s.length; i++) {
-    let current = s[i];
+    let current = s[i]
 
     if (map.has(current)) {
-      map.set(current, map.get(current) + 1);
+      map.set(current, map.get(current) + 1)
     } else {
-      map.set(current, 1);
+      map.set(current, 1)
     }
   }
   for (let i = 0; i < s.length; i++) {
-    let current = s[i];
+    let current = s[i]
     if (map.get(current) === 1) {
-      return i;
+      return i
     }
   }
-  return -1;
+  return -1
 }
 
-console.log(firstUniqChar('leetcode'));
-
+console.log(firstUniqChar('leetcode'))
 
 /**
  * Вычисляет n-ное число Фибоначчи с использованием рекурсии и мемоизации
@@ -249,21 +261,21 @@ console.log(firstUniqChar('leetcode'));
 function fibonacci(n, memo = {}) {
   // Базовые случаи
   if (n <= 1) {
-    return n;
+    return n
   }
 
   // Проверяем, есть ли значение в кеше
   if (n in memo) {
-    return memo[n]; // что здесь происходит?
+    return memo[n] // что здесь происходит?
   }
 
   // Вычисляем новое значение и сохраняем в кеш
-  memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo); // что здесь происходит, что подставляется?
-  return memo[n];
+  memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo) // что здесь происходит, что подставляется?
+  return memo[n]
 }
 // Примеры:
-console.log(fibonacci(8));  // 21
-console.log(fibonacci(10)); // 55
+console.log(fibonacci(8)) // 21
+console.log(fibonacci(10)) // 55
 
 /**
  * React Senior Interview Tasks Collection
@@ -276,26 +288,26 @@ console.log(fibonacci(10)); // 55
 
 // ❌ Проблемный код
 function CounterBad() {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCount(count + 1); // Замыкание на старом значении count
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+      setCount(count + 1) // Замыкание на старом значении count
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 }
 
 // ✅ Правильное решение
 function CounterGood() {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCount(prev => prev + 1); // Используем функциональное обновление
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+      setCount(prev => prev + 1) // Используем функциональное обновление
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 }
 
 // ================ TASK 2: List Optimization ================
@@ -308,32 +320,25 @@ function ExpensiveListBad({ items, onItemClick }) {
   return (
     <div>
       {items.map(item => (
-        <div key={item.id} onClick={() => onItemClick(item.id)}>
+        <div
+          key={item.id}
+          onClick={() => onItemClick(item.id)}
+        >
           {heavyCalculation(item)}
         </div>
       ))}
     </div>
-  );
+  )
 }
 
 // ✅ Оптимизированное решение
 const ListItem = memo(function ListItem({ item, onItemClick }) {
-  const memoizedValue = useMemo(
-    () => heavyCalculation(item),
-    [item]
-  );
+  const memoizedValue = useMemo(() => heavyCalculation(item), [item])
 
-  const handleClick = useCallback(
-    () => onItemClick(item.id),
-    [item.id, onItemClick]
-  );
+  const handleClick = useCallback(() => onItemClick(item.id), [item.id, onItemClick])
 
-  return (
-    <div onClick={handleClick}>
-      {memoizedValue}
-    </div>
-  );
-});
+  return <div onClick={handleClick}>{memoizedValue}</div>
+})
 
 function ExpensiveListGood({ items, onItemClick }) {
   return (
@@ -346,7 +351,7 @@ function ExpensiveListGood({ items, onItemClick }) {
         />
       ))}
     </div>
-  );
+  )
 }
 
 // ================ TASK 3: Cached API Hook ================
@@ -355,39 +360,39 @@ function ExpensiveListGood({ items, onItemClick }) {
  */
 
 function useCachedAPI(url, options = {}) {
-  const cache = useRef(new Map());
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const cache = useRef(new Map())
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const forceRefetch = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(url);
-      const json = await response.json();
-      cache.current.set(url, json);
-      setData(json);
+      setLoading(true)
+      setError(null)
+      const response = await fetch(url)
+      const json = await response.json()
+      cache.current.set(url, json)
+      setData(json)
     } catch (err) {
-      setError(err);
-      cache.current.delete(url);
+      setError(err)
+      cache.current.delete(url)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [url]);
+  }, [url])
 
   useEffect(() => {
-    if (!url) return;
+    if (!url) return
 
     if (cache.current.has(url) && !options.forceRefetch) {
-      setData(cache.current.get(url));
-      return;
+      setData(cache.current.get(url))
+      return
     }
 
-    forceRefetch();
-  }, [url, options.forceRefetch, forceRefetch]);
+    forceRefetch()
+  }, [url, options.forceRefetch, forceRefetch])
 
-  return { data, loading, error, refetch: forceRefetch };
+  return { data, loading, error, refetch: forceRefetch }
 }
 
 // ================ TASK 4: Error Boundary ================
@@ -396,28 +401,28 @@ function useCachedAPI(url, options = {}) {
  */
 
 class ErrorBoundary extends React.Component {
-  state = { error: null };
+  state = { error: null }
 
   static getDerivedStateFromError(error) {
-    return { error };
+    return { error }
   }
 
   render() {
     if (this.state.error) {
-      return this.props.fallback(this.state.error);
+      return this.props.fallback(this.state.error)
     }
-    return this.props.children;
+    return this.props.children
   }
 }
 
 function useErrorHandler() {
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+    if (error) throw error
+  }, [error])
 
-  return setError;
+  return setError
 }
 
 // ================ TASK 5: Custom Store ================
@@ -426,46 +431,41 @@ function useErrorHandler() {
  */
 
 function createStore(initialState) {
-  const subscribers = new Map();
-  let state = initialState;
+  const subscribers = new Map()
+  let state = initialState
 
   function useStore(selector, deps = []) {
-    const [, forceUpdate] = useReducer(x => x + 1, 0);
-    const selectorRef = useRef(selector);
-    const prevValueRef = useRef();
+    const [, forceUpdate] = useReducer(x => x + 1, 0)
+    const selectorRef = useRef(selector)
+    const prevValueRef = useRef()
 
-    const selectedValue = useMemo(
-      () => selector(state),
-      [state, ...deps]
-    );
+    const selectedValue = useMemo(() => selector(state), [state, ...deps])
 
     useEffect(() => {
-      selectorRef.current = selector;
-      prevValueRef.current = selectedValue;
+      selectorRef.current = selector
+      prevValueRef.current = selectedValue
 
       const callback = () => {
-        const newValue = selectorRef.current(state);
+        const newValue = selectorRef.current(state)
         if (newValue !== prevValueRef.current) {
-          prevValueRef.current = newValue;
-          forceUpdate();
+          prevValueRef.current = newValue
+          forceUpdate()
         }
-      };
+      }
 
-      subscribers.set(callback, selector);
-      return () => subscribers.delete(callback);
-    }, [selector, selectedValue]);
+      subscribers.set(callback, selector)
+      return () => subscribers.delete(callback)
+    }, [selector, selectedValue])
 
-    return selectedValue;
+    return selectedValue
   }
 
   function setState(newState) {
-    state = typeof newState === 'function'
-      ? newState(state)
-      : newState;
-    subscribers.forEach(callback => callback());
+    state = typeof newState === 'function' ? newState(state) : newState
+    subscribers.forEach(callback => callback())
   }
 
-  return [useStore, setState];
+  return [useStore, setState]
 }
 
 // ================ TASK 6: Form Validation ================
@@ -474,37 +474,43 @@ function createStore(initialState) {
  */
 
 function useForm(initialValues, validationSchema) {
-  const [values, setValues] = useState(initialValues);
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [isValidating, setIsValidating] = useState(false);
+  const [values, setValues] = useState(initialValues)
+  const [errors, setErrors] = useState({})
+  const [touched, setTouched] = useState({})
+  const [isValidating, setIsValidating] = useState(false)
 
   const debouncedValidate = useCallback(
     debounce(async (name, value) => {
       try {
-        setIsValidating(true);
-        const error = await validationSchema[name]?.(value, values);
-        setErrors(prev => ({ ...prev, [name]: error }));
+        setIsValidating(true)
+        const error = await validationSchema[name]?.(value, values)
+        setErrors(prev => ({ ...prev, [name]: error }))
       } finally {
-        setIsValidating(false);
+        setIsValidating(false)
       }
     }, 300),
-    [values, validationSchema]
-  );
+    [values, validationSchema],
+  )
 
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setValues(prev => ({ ...prev, [name]: value }));
-    if (touched[name]) {
-      debouncedValidate(name, value);
-    }
-  }, [touched, debouncedValidate]);
+  const handleChange = useCallback(
+    e => {
+      const { name, value } = e.target
+      setValues(prev => ({ ...prev, [name]: value }))
+      if (touched[name]) {
+        debouncedValidate(name, value)
+      }
+    },
+    [touched, debouncedValidate],
+  )
 
-  const handleBlur = useCallback((e) => {
-    const { name } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
-    debouncedValidate(name, values[name]);
-  }, [values, debouncedValidate]);
+  const handleBlur = useCallback(
+    e => {
+      const { name } = e.target
+      setTouched(prev => ({ ...prev, [name]: true }))
+      debouncedValidate(name, values[name])
+    },
+    [values, debouncedValidate],
+  )
 
   return {
     values,
@@ -512,8 +518,8 @@ function useForm(initialValues, validationSchema) {
     touched,
     isValidating,
     handleChange,
-    handleBlur
-  };
+    handleBlur,
+  }
 }
 
 // ================ TASK 7: Animation Hook ================
@@ -523,32 +529,32 @@ function useForm(initialValues, validationSchema) {
 
 function useAnimation(ref, isVisible) {
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current) return
 
-    const element = ref.current;
-    let frameId;
+    const element = ref.current
+    let frameId
 
     if (isVisible) {
-      element.style.opacity = '0';
-      element.style.transition = 'opacity 0.3s';
+      element.style.opacity = '0'
+      element.style.transition = 'opacity 0.3s'
 
       frameId = requestAnimationFrame(() => {
         frameId = requestAnimationFrame(() => {
-          element.style.opacity = '1';
-        });
-      });
+          element.style.opacity = '1'
+        })
+      })
     }
 
     return () => {
       if (frameId) {
-        cancelAnimationFrame(frameId);
+        cancelAnimationFrame(frameId)
       }
       if (element) {
-        element.style.opacity = '';
-        element.style.transition = '';
+        element.style.opacity = ''
+        element.style.transition = ''
       }
-    };
-  }, [isVisible]);
+    }
+  }, [isVisible])
 }
 
 // ================ TASK 8: Async State Updates ================
@@ -558,27 +564,27 @@ function useAnimation(ref, isVisible) {
 
 // ❌ Проблемный код
 function AsyncCounterBad() {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0)
 
   const increment = async () => {
-    const newCount = await fetchCount(count);
-    setCount(count + newCount); // Может быть неактуальным
-  };
+    const newCount = await fetchCount(count)
+    setCount(count + newCount) // Может быть неактуальным
+  }
 }
 
 // ✅ Правильное решение
 function AsyncCounterGood() {
-  const [count, setCount] = useState(0);
-  const countRef = useRef(0);
+  const [count, setCount] = useState(0)
+  const countRef = useRef(0)
 
   useEffect(() => {
-    countRef.current = count;
-  }, [count]);
+    countRef.current = count
+  }, [count])
 
   const increment = async () => {
-    const newCount = await fetchCount(countRef.current);
-    setCount(current => current + newCount);
-  };
+    const newCount = await fetchCount(countRef.current)
+    setCount(current => current + newCount)
+  }
 }
 
 // ================ TASK 9: Context Optimization ================
@@ -586,21 +592,19 @@ function AsyncCounterGood() {
  * Задача: Оптимизировать обновления контекста
  */
 
-const StateContext = createContext();
-const DispatchContext = createContext();
+const StateContext = createContext()
+const DispatchContext = createContext()
 
 function Provider({ children }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState)
 
-  const memoizedState = useMemo(() => state, [state]);
+  const memoizedState = useMemo(() => state, [state])
 
   return (
     <StateContext.Provider value={memoizedState}>
-      <DispatchContext.Provider value={dispatch}>
-        {children}
-      </DispatchContext.Provider>
+      <DispatchContext.Provider value={dispatch}>{children}</DispatchContext.Provider>
     </StateContext.Provider>
-  );
+  )
 }
 
 // ================ TASK 10: Infinite Scroll ================
@@ -609,31 +613,34 @@ function Provider({ children }) {
  */
 
 function useInfiniteScroll(fetchMore) {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const observer = useRef();
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(false)
+  const observer = useRef()
 
-  const lastElementRef = useCallback(node => {
-    if (loading) return;
+  const lastElementRef = useCallback(
+    node => {
+      if (loading) return
 
-    if (observer.current) {
-      observer.current.disconnect();
-    }
-
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        fetchMore().then(newItems => {
-          setItems(prev => [...prev, ...newItems]);
-        });
+      if (observer.current) {
+        observer.current.disconnect()
       }
-    });
 
-    if (node) {
-      observer.current.observe(node);
-    }
-  }, [loading, fetchMore]);
+      observer.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          fetchMore().then(newItems => {
+            setItems(prev => [...prev, ...newItems])
+          })
+        }
+      })
 
-  return { items, lastElementRef };
+      if (node) {
+        observer.current.observe(node)
+      }
+    },
+    [loading, fetchMore],
+  )
+
+  return { items, lastElementRef }
 }
 
 // Экспортируем все задачи для тестирования
@@ -647,5 +654,5 @@ export {
   useAnimation,
   AsyncCounterGood,
   Provider,
-  useInfiniteScroll
-};
+  useInfiniteScroll,
+}

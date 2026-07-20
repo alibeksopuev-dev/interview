@@ -18,8 +18,15 @@ export {};
 
 declare global {
   interface Array<T> {
+    // 1. Сигнатура для Type Guard (сужение типов)
+    myFilter<S extends T>(
+      callbackFn: (value: T, index: number, array: Array<T>) => value is S,
+      thisArg?: any,
+    ): Array<S>;
+
+    // 2. Стандартная сигнатура для обычных предикатов
     myFilter(
-      callbackFn: (value: T, index: number, array: Array<T>) => boolean,
+      callbackFn: (value: T, index: number, array: Array<T>) => unknown,
       thisArg?: any,
     ): Array<T>;
   }
@@ -27,9 +34,9 @@ declare global {
 
 Array.prototype.myFilter = function <T>(
   this: T[],
-  callbackFn: (value: T, index: number, array: T[]) => boolean,
+  callbackFn: (value: T, index: number, array: T[]) => unknown,
   thisArg?: any,
-): T[] {
+): any[] {
   const arrayLength = this.length;
   const array: T[] = [];
 
@@ -136,8 +143,15 @@ export {}; // Делает файл модулем для изоляции ти�
 
 declare global {
   interface Array<T> {
+    // 1. Сигнатура для Type Guard (сужение типов)
+    myFilter<S extends T>(
+      callbackFn: (value: T, index: number, array: Array<T>) => value is S,
+      thisArg?: any,
+    ): Array<S>;
+
+    // 2. Стандартная сигнатура для обычных предикатов
     myFilter(
-      callbackFn: (value: T, index: number, array: Array<T>) => boolean,
+      callbackFn: (value: T, index: number, array: Array<T>) => unknown,
       thisArg?: any,
     ): Array<T>;
   }
@@ -145,9 +159,57 @@ declare global {
 ```
 
 *   **`interface Array<T>`** — расширяет стандартный глобальный интерфейс массива с помощью Declaration Merging.
-*   **`callbackFn: (value: T, index: number, array: Array<T>) => boolean`** — типизация колбэка-предиката. Возвращаемое значение типизировано как `boolean`.
+*   **Две перегрузки метода (`overloads`)**:
+    *   **Перегрузка с Type Guard (`myFilter<S extends T>`)** — принимает колбэк вида `value is S` и позволяет TypeScript автоматически сужать тип результирующего массива до `Array<S>`. Например, при фильтрации `(string | undefined)[]` предикатом `(x): x is string => ...` результат будет `string[]`.
+    *   **Стандартная перегрузка** — принимает колбэк, возвращающий `unknown`/`boolean`, и возвращает `Array<T>`.
 *   **`thisArg?: any`** — опциональный аргумент для проброса контекста.
-*   **`Array<T>`** — возвращаемый тип. Метод `filter` возвращает массив того же типа, что и исходный (или его подмножество типов).
+*   **`Array<S> / Array<T>`** — возвращаемые типы в зависимости от перегрузки.
+
+#### Что такое перегрузка (overloads) и нормально ли иметь две сигнатуры?
+
+**Перегрузка функций (Function Overloading)** — это возможность описать несколько способов вызова одной и той же функции с разными типами аргументов и результатов, используя при этом единую реализацию на уровне JavaScript.
+
+В TypeScript перегрузка состоит из двух частей:
+1. **Сигнатуры вызова (Overload Signatures)** — это публичные интерфейсы функции, которые видит внешний код (их может быть сколько угодно).
+2. **Сигнатура реализации (Implementation Signature)** — сама функция с телом, которая должна быть совместима со всеми сигнатурами вызова. Внешний код её не видит.
+
+Для `filter` иметь две сигнатуры — это **стандартная практика**, заимствованная из встроенной библиотеки TypeScript (`lib.es5.d.ts`), потому что метод решает две разные задачи типизации:
+1. **Фильтрация без изменения типа элементов**: `[1, 2, 3]` -> оставляем только четные. Тип элементов не меняется (`number[]` -> `number[]`).
+2. **Фильтрация с сужением типа (Type Narrowing)**: `[1, undefined, 2]` -> отсеиваем `undefined`. Здесь тип массива должен измениться с `(number | undefined)[]` на `number[]`. Для этого TypeScript должен понять, что колбэк является «защитником типа» (Type Guard).
+
+Без перегрузки нам пришлось бы либо жертвовать сужением типов (и разработчикам приходилось бы вручную приводить тип через `as number[]`), либо заставлять всех писать Type Guard, даже если они просто проверяют четность чисел.
+
+#### Что такое сужение типа (Type Narrowing)?
+
+**Сужение типа (Type Narrowing)** — это процесс, при котором TypeScript анализирует структуру кода и уменьшает (делает более конкретным) диапазон возможных типов для переменной в определенной ветке выполнения.
+
+Например, если у нас есть тип `string | undefined`, сужение типа позволяет превратить его в чистую строку `string` после проверки:
+```typescript
+function process(val: string | undefined) {
+  if (val !== undefined) {
+    // Внутри этого блока тип val сузился до string
+    console.log(val.toUpperCase()); 
+  }
+}
+```
+
+##### Причем здесь `myFilter` и User-Defined Type Guards?
+
+Когда мы фильтруем массив смешанных типов `(string | undefined)[]`, обычная проверка `val !== undefined` внутри `myFilter` не дает TypeScript понять, что результирующий массив больше не содержит `undefined`:
+```typescript
+const arr: (string | undefined)[] = ['apple', undefined, 'banana'];
+const res = arr.myFilter(x => x !== undefined); 
+// Без первой сигнатуры тип res всё еще (string | undefined)[]
+```
+
+Чтобы TypeScript узнал о сужении внутри массива, мы используем **пользовательский защитник типа (User-Defined Type Guard)** с оператором `is` в возвращаемом типе колбэка:
+```typescript
+const isNotUndefined = (x: string | undefined): x is string => x !== undefined;
+
+const res = arr.myFilter(isNotUndefined);
+// Благодаря сигнатуре <S extends T>(...) => value is S
+// тип res теперь строго string[]
+```
 
 ---
 
